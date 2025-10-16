@@ -118,3 +118,5 @@ p_save <- fs::path(processed_data_folder, "hipc_clinical.rds")
 
 # Save dataframe
 saveRDS(hipc_clinical, file = p_save)
+
+rm(list = ls())
