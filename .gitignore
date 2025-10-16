@@ -1,5 +1,6 @@
 data/
 data-raw/
+manuscript/
 
 .Rproj.user
 .Rhistory
