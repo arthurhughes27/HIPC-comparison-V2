@@ -12,26 +12,15 @@ library(dearseq)
 processed_data_folder = "data"
 
 # Use fs::path() to specify the data paths robustly
-p_load_expr_young_noNorm <- fs::path(processed_data_folder, "young_noNorm_expr.rds")
-p_load_clinical <- fs::path(processed_data_folder, "hipc_clinical.rds")
-p_load_immResp <- fs::path(processed_data_folder, "hipc_immResp.rds")
+p_load_hipc_merged_young_noNorm <- fs::path(processed_data_folder, "hipc_merged_young_noNorm.rds")
 p_load_BTM <- fs::path(processed_data_folder, "BTM_processed.rds")
 
 # Read in the files
-expr_young_noNorm <- readRDS(p_load_expr_young_noNorm)
-hipc_clinical <- readRDS(p_load_clinical)
-hipc_immResp <- readRDS(p_load_immResp)
+hipc_merged_young_noNorm <- readRDS(p_load_hipc_merged_young_noNorm)
 BTM <- readRDS(p_load_BTM)
 
-# Load the merged dataframe of young, non-normalised data
-processed_data_directory = "data"
-
-merged_hipc_young_noNorm = get(load(
-  paste0(processed_data_directory, "merged_hipc_young_noNorm.RData")
-))
-
 # Extract the gene names
-gene_names_hipc = merged_hipc_young_noNorm %>%
+gene_names_hipc = hipc_merged_young_noNorm %>%
   select(a1cf:zzz3) %>%
   colnames()
 
@@ -39,13 +28,13 @@ gene_names_hipc = merged_hipc_young_noNorm %>%
 results_list <- list()
 
 # Make a code to indicate active treatment (post-vaccination) and control (pre-vaccination) samples
-merged_hipc_young_noNorm <- merged_hipc_young_noNorm %>%
+hipc_merged_young_noNorm <- hipc_merged_young_noNorm %>%
   mutate(vaccine_code = as.factor(ifelse(time_post_last_vax > 0, 2, 1)),
          study_accession = study_accession %>% as.factor()) %>%
   relocate(vaccine_code, .after = vaccine_name)
 
 # Identify all post-vaccination timepoints (greater than zero) and sort
-timepoints <- merged_hipc_young_noNorm %>%
+timepoints <- hipc_merged_young_noNorm %>%
   filter(time_post_last_vax > 0) %>%
   pull(time_post_last_vax) %>%
   unique() %>%
@@ -61,7 +50,7 @@ for (i in seq_along(timepoints)) {
   day <- timepoints[i]
   
   # Identify vaccines
-  valid_vaccines <- merged_hipc_young_noNorm %>%
+  valid_vaccines <- hipc_merged_young_noNorm %>%
     group_by(vaccine_name, participant_id) %>%
     summarise(
       has_post = any(time_post_last_vax == day),
@@ -85,9 +74,10 @@ for (i in seq_along(timepoints)) {
     message(paste0("Analysing ", vax, " at day ", day, " against self-controls."))
     
     # Keep only participants with BOTH pre and post-vaccine measurements
-    df <- merged_hipc_young_noNorm %>%
+    df <- hipc_merged_young_noNorm %>%
       filter(vaccine_name == vax,
-             time_post_last_vax == day | time_post_last_vax <= 0) %>%
+             time_post_last_vax == day |
+               time_post_last_vax <= 0) %>%
       group_by(participant_id) %>%
       filter(any(time_post_last_vax == day),
              any(time_post_last_vax <= 0)) %>%
@@ -111,7 +101,7 @@ for (i in seq_along(timepoints)) {
     
     # Build the design matrix for covariates, removing if collinearity is found
     X_full <-
-      model.matrix( ~ vaccine_code + age_imputed + gender + study_accession, data = df)
+      model.matrix(~ vaccine_code + age_imputed + gender + study_accession, data = df)
     
     # Remove linearly dependent columns
     qrX    <- qr(X_full)
@@ -121,7 +111,7 @@ for (i in seq_along(timepoints)) {
     
     # 3. Drop all the vaccine_code columns
     is_vax_col <- grepl("^vaccine_code", colnames(X_indep))
-    x <- X_indep[,!is_vax_col, drop = FALSE]
+    x <- X_indep[, !is_vax_col, drop = FALSE]
     
     message(
       paste0(
@@ -146,7 +136,7 @@ for (i in seq_along(timepoints)) {
     
     response = df %>%
       filter(time_post_last_vax == day) %>%
-      pull(response_MFC)
+      pull(immResp_MFC_anyAssay_log2_MFC)
     
     # Do permutation testing if sample size < 200
     if (ncol(exprmat) < 200) {
@@ -156,7 +146,7 @@ for (i in seq_along(timepoints)) {
         covariates = x,
         variables2test = phi %>% as.matrix(),
         weights_var2test_condi = FALSE,
-        genesets = GSA[["genesets"]],
+        genesets = BTM[["genesets"]],
         sample_group = subject_ids,
         which_weights = 'loclin',
         which_test = 'permutation',
@@ -181,7 +171,7 @@ for (i in seq_along(timepoints)) {
         covariates = x,
         variables2test = phi %>% as.matrix(),
         weights_var2test_condi = TRUE,
-        genesets = GSA[["genesets"]],
+        genesets = BTM[["genesets"]],
         sample_group = subject_ids,
         which_weights = 'loclin',
         which_test = 'asymptotic',
@@ -204,7 +194,7 @@ for (i in seq_along(timepoints)) {
     score_res = calculate_scores(
       y = exprmat,
       x,
-      GSA = GSA,
+      BTM = BTM,
       phi = phi %>% as.matrix(),
       use_phi = TRUE,
       preprocessed = TRUE,
@@ -217,7 +207,7 @@ for (i in seq_along(timepoints)) {
     # Correlation
     cor_res = calculate_gs_correlation(y = exprmat_postvax,
                                        response = response,
-                                       GSA = GSA)
+                                       BTM = BTM)
     
     # Store and name results
     idx <- sum(index[1:i]) + which(valid_vaccines == vax)
@@ -226,8 +216,7 @@ for (i in seq_along(timepoints)) {
                                 score = score_res,
                                 cor = cor_res)
     
-    names(results_list)[idx] <- sprintf("%s vs %s - Day %s",
-                                        vax, "Control", day)
+    names(results_list)[idx] <- sprintf("%s vs %s - Day %s", vax, "Control", day)
     
     # Log percentage of significant gene sets
     sig_pct <- 100 * mean(test_res$pvals$adjPval < 0.05)
@@ -257,9 +246,8 @@ for (i in seq_along(timepoints)) {
   }
 }
 
+dgsa_results_directory = "./output/results"
 
-dgsa_results_directory = "./output/DGSA/"
+p_results = fs::path("output", "results", "dearseq_reanalysis_list.rds")
 
-save(results_list,
-     file = paste0(dgsa_results_directory,
-                   "dearseq_reanalysis_list.RData"))
+saveRDS(results_list, file = p_results)
