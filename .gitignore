@@ -1,6 +1,7 @@
 data/
 data-raw/
 manuscript/
+output/
 
 .Rproj.user
 .Rhistory

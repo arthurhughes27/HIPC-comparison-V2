@@ -63,8 +63,7 @@ expr_all_norm  = expr_all_norm %>%
   distinct(participant_id, study_time_collected, .keep_all = T)
 
 # Now we can merge these dataframes together by pid and study time
-
-hipc_merged_young_noNorm = full_join(
+hipc_merged_young_noNorm = right_join(
   x = merged_hipc_clinical_immresp,
   y = expr_young_noNorm,
   by = c("participant_id", "study_time_collected")
@@ -75,6 +74,72 @@ hipc_merged_all_norm = full_join(
   y = expr_all_norm,
   by = c("participant_id", "study_time_collected")
 )
+
+# For participants with multiple baseline measurements, take only the most recent. 
+# Rename all baseline sample timepoints to time = 0
+# Work on a copy
+
+hipc_merged_young_noNorm <- hipc_merged_young_noNorm %>%
+  # ensure times are numeric (if they are character/factor)
+  mutate(study_time_collected = as.numeric(as.character(study_time_collected)),
+         .orig_row = row_number()) %>%
+  
+  # separate baseline rows and non-baseline rows
+  {
+    d <- .
+    baseline_keep <- d %>%
+      filter(!is.na(study_time_collected) &
+               study_time_collected <= 0) %>%
+      # pick the single "most recent" baseline per participant
+      group_by(participant_id) %>%
+      slice_max(order_by = study_time_collected,
+                n = 1,
+                with_ties = FALSE) %>%
+      ungroup() %>%
+      # if the selected baseline is negative, rename it to 0 (only for the kept row)
+      mutate(study_time_collected = ifelse(study_time_collected < 0, 0, study_time_collected))
+    
+    non_baseline <- d %>%
+      # keep all positive-time rows and rows with NA times (these are not considered baseline here)
+      filter(is.na(study_time_collected) | study_time_collected > 0)
+    
+    # combine back
+    bind_rows(non_baseline, baseline_keep) %>%
+      # optional: restore original ordering (or change as desired)
+      arrange(participant_id, .orig_row) %>%
+      select(-.orig_row)
+  }
+
+hipc_merged_all_norm <- hipc_merged_all_norm %>%
+  # ensure times are numeric (if they are character/factor)
+  mutate(study_time_collected = as.numeric(as.character(study_time_collected)),
+         .orig_row = row_number()) %>%
+  
+  # separate baseline rows and non-baseline rows
+  {
+    d <- .
+    baseline_keep <- d %>%
+      filter(!is.na(study_time_collected) &
+               study_time_collected <= 0) %>%
+      # pick the single "most recent" baseline per participant
+      group_by(participant_id) %>%
+      slice_max(order_by = study_time_collected,
+                n = 1,
+                with_ties = FALSE) %>%
+      ungroup() %>%
+      # if the selected baseline is negative, rename it to 0 (only for the kept row)
+      mutate(study_time_collected = ifelse(study_time_collected < 0, 0, study_time_collected))
+    
+    non_baseline <- d %>%
+      # keep all positive-time rows and rows with NA times (these are not considered baseline here)
+      filter(is.na(study_time_collected) | study_time_collected > 0)
+    
+    # combine back
+    bind_rows(non_baseline, baseline_keep) %>%
+      # optional: restore original ordering (or change as desired)
+      arrange(participant_id, .orig_row) %>%
+      select(-.orig_row)
+  }
 
 # Save the merged dataframes
 

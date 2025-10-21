@@ -6,6 +6,8 @@ This project makes use of transcriptomic data (microarrays / bulk RNA-seq) toget
 
 It uses publically available data from the Human Immune Project Consortium's ImmuneSignatures2 project. The raw data used for this project can be found at [immunespace.org](immunespace.org) and is not stored on this repository.
 
+Figures and results data may be generated from the R scripts in the /analysis folder, but will not be uploaded to this repository until the completion of the project.  
+
 The work focuses on developing and applying reproducible, well-documented analysis workflows for:
 
  - the preprocessing of public vaccine transcriptomic datasets,
