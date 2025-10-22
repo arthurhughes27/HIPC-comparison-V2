@@ -73,7 +73,7 @@ p1 <- ggplot(counts, aes(x = study_time_collected, y = vaccine_name)) +
     x = "Days post-vaccination",
     y = "Vaccine",
     title = "Number of participants with transcriptomic samples at each timepoint",
-    subtitle = "All timepoints, Only participants with valid immune response data included"
+    subtitle = "All timepoints, only participants with valid immune response data included"
   ) +
   theme_minimal() +
   theme(
@@ -187,7 +187,7 @@ p2 <- ggplot(counts_cumulative,
     x = "Days post-vaccination",
     y = "Vaccine",
     title = "Cumulative number of participants with transcriptomic samples at all prior timepoints",
-    subtitle = "Selected timepoints, Only participants with valid immune response data included"
+    subtitle = "Selected timepoints, only participants with valid immune response data included"
   ) +
   theme_minimal() +
   theme(
@@ -206,7 +206,7 @@ ggsave(
   filename = "bubble_plot_cumulative.pdf",
   path = descriptive_figures_folder,
   plot = p2,
-  width = 35,
+  width = 38,
   height = 20,
   units = "cm"
 )
@@ -313,7 +313,7 @@ p3 <- ggplot(counts_plot, aes(x = study_time_collected, y = vaccine_name)) +
     x = "Days post-vaccination",
     y = "Vaccine",
     title = "Number of participants with transcriptomic samples at selected timepoints",
-    subtitle = "Only participants with valid immune response data included"
+    subtitle = "only participants with valid immune response data included"
   ) +
   theme_minimal() +
   theme(
@@ -403,7 +403,7 @@ counts_plot <- p4_counts %>%
     vaccine_name = factor(vaccine_name, levels = vaccine_levels, ordered = TRUE)
   )
 
-# ---------- 5) plot p4 ----------
+#  plot
 p4 <- ggplot(counts_plot, aes(x = study_time_collected, y = vaccine_name)) +
   geom_point(
     aes(
@@ -429,7 +429,7 @@ p4 <- ggplot(counts_plot, aes(x = study_time_collected, y = vaccine_name)) +
     x = "Days post-vaccination",
     y = "Vaccine",
     title = "Cumulative number of participants with transcriptomic samples at all prior timepoints",
-    subtitle = "Selected timepoints per-vaccine, Only participants with valid immune response data included"
+    subtitle = "Selected timepoints per-vaccine, only participants with valid immune response data included"
   ) +
   theme_minimal() +
   theme(
@@ -449,10 +449,66 @@ ggsave(
   filename = "bubble_plot_cumulative_speficied.pdf",
   path = descriptive_figures_folder,
   plot = p4,
-  width = 35,
+  width = 38,
   height = 20,
   units = "cm"
 )
 
-# Now we have decided on the samples to include, we should investigate the antibody distributions of these participants
-# We will then make a choice on which vaccines to include based on the variability in fold-change measurements
+# Based on exploration of antibody responses, we chose the following 5 vaccines on which to perform predictive analyses
+# Yellow Fever (LV)
+# Hepatitis A/B (IN/RP)
+# Influenza (IN)
+# Meningococcus (CJ)
+# Meningococcus (PS)
+# Below is the cumulative sample plot only for these 5 vaccines
+p5 <- counts_plot %>% 
+  filter(vaccine_name %in% c("Yellow Fever (LV)", "Hepatitis A/B (IN/RP)", "Influenza (IN)", "Meningococcus (CJ)", "Meningococcus (PS)")) %>% 
+  ggplot(aes(x = study_time_collected, y = vaccine_name)) +
+  geom_point(
+    aes(
+      size = size_var,
+      fill = fill_color,
+      colour = border_color,
+      alpha = alpha_val
+    ),
+    shape = 21,
+    show.legend = FALSE
+  ) +
+  geom_text(
+    aes(label = n, colour = text_color),
+    size = 3.5,
+    vjust = 0.5,
+    show.legend = FALSE
+  ) +
+  scale_fill_identity(guide = "none") +
+  scale_colour_identity(guide = "none") +
+  scale_alpha_identity(guide = "none") +
+  scale_size_area(max_size = 28, guide = "none") +
+  labs(
+    x = "Days post-vaccination",
+    y = "Vaccine",
+    title = "Cumulative number of participants with transcriptomic samples at all prior timepoints",
+    subtitle = "Selected vaccines and timepoints, only participants with valid immune response data included"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 18, hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(size = 15, hjust = 0.5)
+  )
+
+print(p5)
+
+# Save (adjust path/filename as needed)
+ggsave(
+  filename = "bubble_plot_cumulative_speficied_selectedVaccines.pdf",
+  path = descriptive_figures_folder,
+  plot = p5,
+  width = 38,
+  height = 15,
+  units = "cm"
+)

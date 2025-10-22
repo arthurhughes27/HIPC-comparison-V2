@@ -1,5 +1,5 @@
 # R script to engineer preprocessed expression data into gene-set level fold-change features.
-# We adopt a "cumulative information" approach 
+# We adopt a "cumulative information" approach
 # That is, we aim to see how accumulating information from multiple timepoints changes predictive quality
 # Here, we start with a baseline set of predictors, then add on predictors derived at each one of some selected timepoints
 
@@ -22,12 +22,15 @@ hipc_merged_all_norm_response = hipc_merged_all_norm %>%
 
 # Now code a helper functions to calculate gene-set features at baseline (i.e. mean gene-set expression at baseline)
 
-compute_geneset_baseline <- function(df, # expression dataframe
-                                     genesets, # list of genesets (i.e. each element is a vector of gene names)
-                                     geneset_names, # vector of geneset names
-                                     id_col, # column name of the participant identifier in df
-                                     time_col # column name of the timepoint identifier in df
-                                     ) { 
+compute_geneset_baseline <- function(df,
+                                     # expression dataframe
+                                     genesets,
+                                     # list of genesets (i.e. each element is a vector of gene names)
+                                     geneset_names,
+                                     # vector of geneset names
+                                     id_col,
+                                     # column name of the participant identifier in df
+                                     time_col) {
   ## Basic checks
   if (!is.data.frame(df)) {
     stop("df must be a data.frame") # check df is a dataframe
@@ -49,8 +52,8 @@ compute_geneset_baseline <- function(df, # expression dataframe
   df[[time_col]] <- as.numeric(df[[time_col]])
   
   # Extract gene names from df
-  gene_cols <- df %>% 
-    dplyr::select(a1cf:zzz3) %>% 
+  gene_cols <- df %>%
+    dplyr::select(a1cf:zzz3) %>%
     colnames()
   
   # Since some participants have multiple pre-vaccination timepoints, we need to select the most recent one
@@ -73,7 +76,7 @@ compute_geneset_baseline <- function(df, # expression dataframe
   result <-
     data.frame(matrix(nrow = length(rownames(baseline_df)), ncol = (length(geneset_names) + 1)))
   
-  # set the rownames 
+  # set the rownames
   rownames(result) = baseline_df[[id_col]]
   
   # set the column names
@@ -83,7 +86,8 @@ compute_geneset_baseline <- function(df, # expression dataframe
   result[[id_col]] <- baseline_df[[id_col]]
   
   # fill geneset columns with row-wise means across present genes
-  for (i in seq_along(genesets)) { # For each geneset
+  for (i in seq_along(genesets)) {
+    # For each geneset
     # Which are the genes in this set
     set_genes <- genesets[[i]]
     # Which of these genes are present in our data?
@@ -98,15 +102,19 @@ compute_geneset_baseline <- function(df, # expression dataframe
   return(result)
 }
 
-# The following is a helper function which computes gene-set fold change at a given timepoint. 
+# The following is a helper function which computes gene-set fold change at a given timepoint.
 
-compute_geneset_fc <- function(df, # expression dataframe
-                               genesets, # list of genesets (i.e. each element is a vector of gene names)
-                               geneset_names, # vector of geneset names
-                               id_col, # column name of the participant identifier in df
-                               time_col, # column name of the timepoint identifier in df
-                               timepoint # timepoint at which to compute fold-change
-                               ) {
+compute_geneset_fc <- function(df,
+                               # expression dataframe
+                               genesets,
+                               # list of genesets (i.e. each element is a vector of gene names)
+                               geneset_names,
+                               # vector of geneset names
+                               id_col,
+                               # column name of the participant identifier in df
+                               time_col,
+                               # column name of the timepoint identifier in df
+                               timepoint) {
   ## Basic checks
   if (!is.data.frame(df)) {
     stop("df must be a data.frame") # check df is a dataframe
@@ -128,8 +136,8 @@ compute_geneset_fc <- function(df, # expression dataframe
   df[[time_col]] <- as.numeric(df[[time_col]])
   
   # Extract gene names from df
-  gene_cols <- df %>% 
-    dplyr::select(a1cf:zzz3) %>% 
+  gene_cols <- df %>%
+    dplyr::select(a1cf:zzz3) %>%
     colnames()
   
   # Since some participants have multiple pre-vaccination timepoints, we need to select the most recent one
@@ -142,7 +150,7 @@ compute_geneset_fc <- function(df, # expression dataframe
   bl_sorted <- baseline_candidates[ord_bl, , drop = FALSE]
   baseline_df <- bl_sorted[!duplicated(bl_sorted[[id_col]]), , drop = FALSE]
   baseline_df <- baseline_df[, c(id_col, gene_cols), drop = FALSE]
-
+  
   # convert baseline gene values to numeric matrix
   bl_mat <- as.matrix(baseline_df[, gene_cols, drop = FALSE])
   storage.mode(bl_mat) <- "numeric"
@@ -161,7 +169,7 @@ compute_geneset_fc <- function(df, # expression dataframe
   common_ids <-
     intersect(bl_ids, tp_ids)  # order follows baseline_df
   
-  # Make two dataframes, one containing the baseline expression and 
+  # Make two dataframes, one containing the baseline expression and
   # the other containing the post-vaccination expression
   # we should make sure these contain only the relevant participants, and they are in the same order
   baseline_sub <-
@@ -171,14 +179,14 @@ compute_geneset_fc <- function(df, # expression dataframe
   
   # ---- convert to numeric matrices and compute difference (post - baseline) ----
   bl_mat <- as.matrix(baseline_sub[, gene_cols, drop = FALSE])
-  tp_mat <- as.matrix(tp_sub[,       gene_cols, drop = FALSE])
+  tp_mat <- as.matrix(tp_sub[, gene_cols, drop = FALSE])
   storage.mode(bl_mat) <- "numeric"
   storage.mode(tp_mat) <- "numeric"
   
   # Compute fold-change
   diff_mat <- tp_mat - bl_mat
   rownames(diff_mat) <- as.character(baseline_sub[[id_col]])
-  diff_mat = diff_mat %>% 
+  diff_mat = diff_mat %>%
     as.data.frame()
   
   # ---- compute geneset fold-change features
@@ -186,7 +194,7 @@ compute_geneset_fc <- function(df, # expression dataframe
   result <-
     data.frame(matrix(nrow = length(rownames(diff_mat)), ncol = (length(geneset_names) + 1)))
   
-  # set the rownames 
+  # set the rownames
   rownames(result) = baseline_sub[[id_col]]
   
   # set the column names
@@ -196,7 +204,8 @@ compute_geneset_fc <- function(df, # expression dataframe
   result[[id_col]] <- baseline_sub[[id_col]]
   
   # fill geneset columns with row-wise means across present genes
-  for (i in seq_along(genesets)) { # For each geneset
+  for (i in seq_along(genesets)) {
+    # For each geneset
     # Which are the genes in this set
     set_genes <- genesets[[i]]
     # Which of these genes are present in our data?
@@ -212,6 +221,9 @@ compute_geneset_fc <- function(df, # expression dataframe
 }
 
 # Now we can calculate geneset-level features for each timepoint of interest
+# The timepoints we consider are vaccine-dependent
+# These timepoints were selected based on the (cumulative) number of samples available for each vaccine
+# The timepoints of interest are c(0, 1, 3, 7, 10, 14, 28)
 
 # Select a clinical baseline dataframe containing vaccine, age, gender, and race
 d0_clinical = hipc_merged_all_norm_response %>%
@@ -219,6 +231,7 @@ d0_clinical = hipc_merged_all_norm_response %>%
     participant_id,
     immResp_MFC_anyAssay_log2_MFC,
     vaccine_name,
+    vaccine_colour,
     age_imputed,
     gender,
     race
@@ -233,38 +246,142 @@ d0 = compute_geneset_baseline(
   time_col = "study_time_collected"
 )
 
-d1 = compute_geneset_fc(df = hipc_merged_all_norm_response,
-                        genesets = BTM[["genesets"]],
-                        geneset_names = BTM[["geneset.names.descriptions"]],
-                        id_col = "participant_id",
-                        time_col = "study_time_collected",
-                        timepoint = 1
+d1 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 1
 )
 
-d3 = compute_geneset_fc(df = hipc_merged_all_norm_response,
-                        genesets = BTM[["genesets"]],
-                        geneset_names = BTM[["geneset.names.descriptions"]],
-                        id_col = "participant_id",
-                        time_col = "study_time_collected",
-                        timepoint = 3
+d3 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 3
 )
 
-d7 = compute_geneset_fc(df = hipc_merged_all_norm_response,
-                        genesets = BTM[["genesets"]],
-                        geneset_names = BTM[["geneset.names.descriptions"]],
-                        id_col = "participant_id",
-                        time_col = "study_time_collected",
-                        timepoint = 7
+d7 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 7
 )
 
-# First step - clinical with baseline expression
-d0_merged = full_join(x = d0_clinical, y = d0, by = "participant_id")
+d10 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 10
+)
 
-# Now merge the day 1 data
-d1_merged = merge(x = d0_merged, y= d1,  by = "participant_id")
+d14 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 14
+)
 
-# Now merge the day 3 data
-d3_merged = merge(x = d1_merged, y= d3,  by = "participant_id")
+d28 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 28
+)
 
-# Now merge the day 7 data
-d7_merged = merge(x = d3_merged, y= d7,  by = "participant_id")
+# Now we have to merge these data together in a cumulative manner
+# That is, we should have one dataframe per vaccine per timepoint.
+# This dataframe should contain all of the features up to a given timepoint.
+# We have to do this vaccine-by-vaccine since not all vaccines share the same desired timepoints.
+# Here is a helper function to derive cumulatively merged dataframes for a given vaccine
+# It outputs a list for a given vaccine containing dataframes at each timepoint
+
+cumulative_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
+  # List to store cumulative dataframes
+  cumulative_list <- list()
+  
+  # Start with baseline clinical data filtered for the selected vaccine
+  current_df <- d0_clinical %>%
+    dplyr::filter(vaccine_name == vaccine)
+  
+  cumulative_list[[1]] <- current_df  # first element is baseline
+  
+  # Keep track of names
+  list_names <- c("clinical")
+  
+  # Loop over each timepoint
+  for (tp in timepoints_of_interest) {
+    # Construct the dataframe name dynamically, e.g., "d3", "d7"
+    df_name <- paste0("d", tp)
+    
+    # Check if the dataframe exists
+    if (!exists(df_name)) {
+      warning(paste0(
+        "Dataframe ",
+        df_name,
+        " does not exist. Skipping timepoint ",
+        tp,
+        "."
+      ))
+      next
+    }
+    
+    # Get the dataframe object
+    tp_df <- get(df_name)
+    
+    # Keep participant_id first
+    tp_df <- tp_df %>%
+      dplyr::select(participant_id, dplyr::everything())
+    
+    # Cumulative merge: keep only participants present in both
+    current_df <- dplyr::inner_join(current_df, tp_df, by = "participant_id")
+    
+    # Append to the list
+    cumulative_list[[length(cumulative_list) + 1]] <- current_df
+    
+    # Append name
+    list_names <- c(list_names, paste0("Day ", tp))
+  }
+  
+  # Set names for the list
+  names(cumulative_list) <- list_names
+  
+  return(cumulative_list)
+}
+
+# Specify the vaccines of interst and the corresponding timepoints for each
+# These vaccines were chosen based on sample sizes and heterogeneity in immune response values
+specified_timepoints_list <- list(
+  "Meningococcus (PS)" = c(0, 3, 7),
+  "Meningococcus (CJ)" = c(0, 3, 7),
+  "Influenza (IN)" = c(0, 1, 3, 7, 14, 28),
+  "Hepatitis A/B (IN/RP)" = c(0, 7),
+  "Yellow Fever (LV)" = c(0, 3, 7, 10, 14, 28)
+)
+
+# Now apply the cumulative merge function to each
+cumulative_prediction_sets_list <- lapply(names(specified_timepoints_list), function(vac) {
+  timepoints <- specified_timepoints_list[[vac]]
+  cumulative_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
+})
+
+# Name the top-level list elements with the vaccine names
+names(cumulative_prediction_sets_list) <- names(specified_timepoints_list)
+
+# Specify the path to save the list
+p_save_prediction_sets_list <- fs::path(processed_data_folder, "cumulative_prediction_sets_list.rds")
+
+# Save the data
+saveRDS(cumulative_prediction_sets_list, p_save_prediction_sets_list)
+
