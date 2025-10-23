@@ -365,7 +365,7 @@ cumulative_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
 specified_timepoints_list <- list(
   "Meningococcus (PS)" = c(0, 3, 7),
   "Meningococcus (CJ)" = c(0, 3, 7),
-  "Influenza (IN)" = c(0, 1, 3, 7, 14, 28),
+  "Influenza (IN)" = c(0, 1, 3, 7, 14),
   "Hepatitis A/B (IN/RP)" = c(0, 7),
   "Yellow Fever (LV)" = c(0, 3, 7, 10, 14, 28)
 )
