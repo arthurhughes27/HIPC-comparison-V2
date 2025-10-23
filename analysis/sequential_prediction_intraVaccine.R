@@ -409,7 +409,7 @@ for (vac in names(sequential_prediction_sets)) {
         n_outer = 10,
         n_inner = 5,
         response_name = "immResp_MFC_anyAssay_log2_MFC",
-        clinical_cols = c("age_imputed", "gender", "race"),
+        clinical_cols = c("age_imputed", "gender"),
         include_clinical = TRUE,
         seed = 22072025,
         n_cores = 8,
@@ -454,7 +454,7 @@ for (vac in names(sequential_prediction_sets)) {
         n_outer = 10,
         n_inner = 5,
         response_name = "immResp_MFC_anyAssay_log2_MFC",
-        clinical_cols = c("age_imputed", "gender", "race"),
+        clinical_cols = c("age_imputed", "gender"),
         include_clinical = FALSE,
         seed = 22072025,
         n_cores = 10,
@@ -655,7 +655,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
   ) +
   plot_annotation(
     title = "Evaluation metrics of CV predictions",
-    subtitle = "Sequential prediction set approach, clinical variables not included",
+    subtitle = "Sequential prediction set approach, clinical variables included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
       plot.subtitle = element_text(size = 20, face = "bold", hjust = 0.5)

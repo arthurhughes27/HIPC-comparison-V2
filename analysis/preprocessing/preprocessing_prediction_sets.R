@@ -233,8 +233,7 @@ d0_clinical = hipc_merged_all_norm_response %>%
     vaccine_name,
     vaccine_colour,
     age_imputed,
-    gender,
-    race
+    gender
   ) %>%
   distinct()
 
@@ -246,6 +245,15 @@ d0 = compute_geneset_baseline(
   time_col = "study_time_collected"
 )
 
+d0.17 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 0.17
+)
+
 d1 = compute_geneset_fc(
   df = hipc_merged_all_norm_response,
   genesets = BTM[["genesets"]],
@@ -254,6 +262,16 @@ d1 = compute_geneset_fc(
   time_col = "study_time_collected",
   timepoint = 1
 )
+
+d2 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 2
+)
+
 
 d3 = compute_geneset_fc(
   df = hipc_merged_all_norm_response,
@@ -298,6 +316,15 @@ d28 = compute_geneset_fc(
   id_col = "participant_id",
   time_col = "study_time_collected",
   timepoint = 28
+)
+
+d70 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM[["genesets"]],
+  geneset_names = BTM[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 70
 )
 
 # For the sequential approach, we save each dataframe per vaccine per timepoint
@@ -417,9 +444,18 @@ cumulative_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
   return(cumulative_list)
 }
 
-# Specify the vaccines of interst and the corresponding timepoints for each
+# Specify the vaccines of interst and the corresponding timepoints for each in the
+# sequential and cumulative approaches.
 # These vaccines were chosen based on sample sizes and heterogeneity in immune response values
-specified_timepoints_list <- list(
+specified_timepoints_list_sequential <- list(
+  "Meningococcus (PS)" = c(0, 3, 7),
+  "Meningococcus (CJ)" = c(0, 3, 7),
+  "Influenza (IN)" = c(0, 1, 2, 3, 4, 7, 14, 28, 70),
+  "Hepatitis A/B (IN/RP)" = c(0, 7),
+  "Yellow Fever (LV)" = c(0, 0.17, 3, 7, 10, 14, 28)
+)
+
+specified_timepoints_list_cumulative <- list(
   "Meningococcus (PS)" = c(0, 3, 7),
   "Meningococcus (CJ)" = c(0, 3, 7),
   "Influenza (IN)" = c(0, 1, 3, 7, 14),
@@ -428,13 +464,13 @@ specified_timepoints_list <- list(
 )
 
 # Now apply the sequential merge function to each 
-sequential_prediction_sets_list <- lapply(names(specified_timepoints_list), function(vac) {
-  timepoints <- specified_timepoints_list[[vac]]
+sequential_prediction_sets_list <- lapply(names(specified_timepoints_list_sequential), function(vac) {
+  timepoints <- specified_timepoints_list_sequential[[vac]]
   sequential_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
 })
 
 # Name the top-level list elements with the vaccine names
-names(sequential_prediction_sets_list) <- names(specified_timepoints_list)
+names(sequential_prediction_sets_list) <- names(specified_timepoints_list_cumulative)
 
 # Specify the path to save the list
 p_save_prediction_sets_list <- fs::path(processed_data_folder, "sequential_prediction_sets_list.rds")
@@ -443,13 +479,13 @@ p_save_prediction_sets_list <- fs::path(processed_data_folder, "sequential_predi
 saveRDS(sequential_prediction_sets_list, p_save_prediction_sets_list)
 
 # Now apply the cumulative merge function to each
-cumulative_prediction_sets_list <- lapply(names(specified_timepoints_list), function(vac) {
-  timepoints <- specified_timepoints_list[[vac]]
+cumulative_prediction_sets_list <- lapply(names(specified_timepoints_list_cumulative), function(vac) {
+  timepoints <- specified_timepoints_list_cumulative[[vac]]
   cumulative_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
 })
 
 # Name the top-level list elements with the vaccine names
-names(cumulative_prediction_sets_list) <- names(specified_timepoints_list)
+names(cumulative_prediction_sets_list) <- names(specified_timepoints_list_cumulative)
 
 # Specify the path to save the list
 p_save_prediction_sets_list <- fs::path(processed_data_folder, "cumulative_prediction_sets_list.rds")
