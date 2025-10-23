@@ -300,7 +300,64 @@ d28 = compute_geneset_fc(
   timepoint = 28
 )
 
-# Now we have to merge these data together in a cumulative manner
+# For the sequential approach, we save each dataframe per vaccine per timepoint
+# containing only the information present at that timepoint
+
+sequential_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
+  # List to store sequential dataframes
+  sequential_list <- list()
+  
+  # Start with baseline clinical data filtered for the selected vaccine
+  clinical_df <- d0_clinical %>%
+    dplyr::filter(vaccine_name == vaccine)
+  
+  sequential_list[[1]] <- clinical_df  # first element is baseline
+  
+  # Keep track of names
+  list_names <- c("clinical")
+  
+  # Loop over each timepoint
+  for (tp in timepoints_of_interest) {
+    # Construct the dataframe name dynamically, e.g., "d3", "d7"
+    df_name <- paste0("d", tp)
+    
+    # Check if the dataframe exists
+    if (!exists(df_name)) {
+      warning(paste0(
+        "Dataframe ",
+        df_name,
+        " does not exist. Skipping timepoint ",
+        tp,
+        "."
+      ))
+      next
+    }
+    
+    # Get the dataframe object
+    tp_df <- get(df_name)
+    
+    # Keep participant_id first
+    tp_df <- tp_df %>%
+      dplyr::select(participant_id, dplyr::everything())
+    
+    # Cumulative merge: keep only participants present in both
+    current_df <- dplyr::inner_join(clinical_df, tp_df, by = "participant_id")
+    
+    # Append to the list
+    sequential_list[[length(sequential_list) + 1]] <- current_df
+    
+    # Append name
+    list_names <- c(list_names, paste0("Day ", tp))
+  }
+  
+  # Set names for the list
+  names(sequential_list) <- list_names
+  
+  return(sequential_list)
+}
+
+
+# For the cumulative approach, we have to merge these data together in a cumulative manner
 # That is, we should have one dataframe per vaccine per timepoint.
 # This dataframe should contain all of the features up to a given timepoint.
 # We have to do this vaccine-by-vaccine since not all vaccines share the same desired timepoints.
@@ -369,6 +426,21 @@ specified_timepoints_list <- list(
   "Hepatitis A/B (IN/RP)" = c(0, 7),
   "Yellow Fever (LV)" = c(0, 3, 7, 10, 14, 28)
 )
+
+# Now apply the sequential merge function to each 
+sequential_prediction_sets_list <- lapply(names(specified_timepoints_list), function(vac) {
+  timepoints <- specified_timepoints_list[[vac]]
+  sequential_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
+})
+
+# Name the top-level list elements with the vaccine names
+names(sequential_prediction_sets_list) <- names(specified_timepoints_list)
+
+# Specify the path to save the list
+p_save_prediction_sets_list <- fs::path(processed_data_folder, "sequential_prediction_sets_list.rds")
+
+# Save the data
+saveRDS(sequential_prediction_sets_list, p_save_prediction_sets_list)
 
 # Now apply the cumulative merge function to each
 cumulative_prediction_sets_list <- lapply(names(specified_timepoints_list), function(vac) {

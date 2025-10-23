@@ -1,4 +1,4 @@
-# A script to perform within-vaccine predictions based on accumulated transcriptomics data over time
+# A script to perform within-vaccine predictions based on sequential transcriptomics data over time
 # The vaccines were selected based on number of available samples and heterogeneity in immune response
 # The timepoints were selected per-vaccine based on the number of available samples
 # The justification for these decisions can be found in the files analysis/transcriptomic_sample_descriptions.R
@@ -24,12 +24,12 @@ processed_data_folder = "data"
 # Directory to store figures
 prediction_figures_folder = fs::path("output", "figures", "prediction")
 
-# Path to cumulative prediction sets list
-p_load_cumulative_prediction_sets <- fs::path(processed_data_folder,
-                                              "cumulative_prediction_sets_list.rds")
+# Path to sequential prediction sets list
+p_load_sequential_prediction_sets <- fs::path(processed_data_folder,
+                                              "sequential_prediction_sets_list.rds")
 
-# Load cumulative prediction sets list
-cumulative_prediction_sets = readRDS(p_load_cumulative_prediction_sets)
+# Load sequential prediction sets list
+sequential_prediction_sets = readRDS(p_load_sequential_prediction_sets)
 
 # Assign each prediction set a colour code for later visualisation
 prediction_set_colours = list(
@@ -44,8 +44,8 @@ prediction_set_colours = list(
 )
 
 
-# Write a function to perform prediction for a given vaccine with information accumulated up to a given timepoint
-cumulative_prediction_function = function(prediction_set_list,
+# Write a function to perform prediction for a given vaccine with information sequential up to a given timepoint
+sequential_prediction_function = function(prediction_set_list,
                                           vaccine,
                                           set_name = "clinical",
                                           n_outer,
@@ -383,18 +383,18 @@ cumulative_prediction_function = function(prediction_set_list,
   
 }
 
-# Now we need to apply this function to all of our vaccines and cumulative predictor sets
+# Now we need to apply this function to all of our vaccines and sequential predictor sets
 
 # prepare a results list with the same structure as the predictor set list
-prediction_results_all_withClinical <- vector("list", length(cumulative_prediction_sets))
-names(prediction_results_all_withClinical) <- names(cumulative_prediction_sets)
+prediction_results_all_sequential_withClinical <- vector("list", length(sequential_prediction_sets))
+names(prediction_results_all_sequential_withClinical) <- names(sequential_prediction_sets)
 
 # For each vaccine
-for (vac in names(cumulative_prediction_sets)) {
+for (vac in names(sequential_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
-  set_names <- names(cumulative_prediction_sets[[vac]])
-  prediction_results_all_withClinical[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_withClinical[[vac]]) <- set_names
+  set_names <- names(sequential_prediction_sets[[vac]])
+  prediction_results_all_sequential_withClinical[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_sequential_withClinical[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -402,8 +402,8 @@ for (vac in names(cumulative_prediction_sets)) {
     message(sprintf("Running: vaccine = '%s'   set = '%s'", vac, set_name))
     # Run prediction function
     res <-
-      cumulative_prediction_function(
-        prediction_set_list = cumulative_prediction_sets,
+      sequential_prediction_function(
+        prediction_set_list = sequential_prediction_sets,
         vaccine = vac,
         set_name = set_name,
         n_outer = 10,
@@ -417,29 +417,29 @@ for (vac in names(cumulative_prediction_sets)) {
       )
     
     # store the result
-    prediction_results_all_withClinical[[vac]][[set_name]] <- res
+    prediction_results_all_sequential_withClinical[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_withClinical = fs::path("output",
-                                                 "results",
-                                                 "prediction_results_all_withClinical.rds")
+p_prediction_results_all_sequential_withClinical = fs::path("output",
+                                                            "results",
+                                                            "prediction_results_all_sequential_withClinical.rds")
 
-saveRDS(prediction_results_all_withClinical, file = p_prediction_results_all_withClinical)
+saveRDS(prediction_results_all_sequential_withClinical, file = p_prediction_results_all_sequential_withClinical)
 
 # Do the same prediction task but remove clinical variables from the prediction
 
-prediction_results_all_withoutClinical <- vector("list", length(cumulative_prediction_sets))
-names(prediction_results_all_withoutClinical) <- names(cumulative_prediction_sets)
+prediction_results_all_sequential_withoutClinical <- vector("list", length(sequential_prediction_sets))
+names(prediction_results_all_sequential_withoutClinical) <- names(sequential_prediction_sets)
 # For each vaccine
-for (vac in names(cumulative_prediction_sets)) {
+for (vac in names(sequential_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
-  set_names <- names(cumulative_prediction_sets[[vac]])[-1]
-  prediction_results_all_withoutClinical[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_withoutClinical[[vac]]) <- set_names
+  set_names <- names(sequential_prediction_sets[[vac]])[-1]
+  prediction_results_all_sequential_withoutClinical[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_sequential_withoutClinical[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -447,8 +447,8 @@ for (vac in names(cumulative_prediction_sets)) {
     message(sprintf("Running: vaccine = '%s'   set = '%s'", vac, set_name))
     # Run prediction function
     res <-
-      cumulative_prediction_function(
-        prediction_set_list = cumulative_prediction_sets,
+      sequential_prediction_function(
+        prediction_set_list = sequential_prediction_sets,
         vaccine = vac,
         set_name = set_name,
         n_outer = 10,
@@ -462,18 +462,18 @@ for (vac in names(cumulative_prediction_sets)) {
       )
     
     # store the result
-    prediction_results_all_withoutClinical[[vac]][[set_name]] <- res
+    prediction_results_all_sequential_withoutClinical[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_withoutClinical = fs::path("output",
-                                                    "results",
-                                                    "prediction_results_all_withoutClinical.rds")
+p_prediction_results_all_sequential_withoutClinical = fs::path("output",
+                                                               "results",
+                                                               "prediction_results_all_sequential_withoutClinical.rds")
 
-saveRDS(prediction_results_all_withoutClinical, file = p_prediction_results_all_withoutClinical)
+saveRDS(prediction_results_all_sequential_withoutClinical, file = p_prediction_results_all_sequential_withoutClinical)
 
 #-------------------------------
 # Plot results
@@ -481,14 +481,14 @@ saveRDS(prediction_results_all_withoutClinical, file = p_prediction_results_all_
 
 # Load the 'with clinical' results
 
-p_prediction_results_all_withClinical = fs::path("output",
-                                                 "results",
-                                                 "prediction_results_all_withClinical.rds")
+p_prediction_results_all_sequential_withClinical = fs::path("output",
+                                                            "results",
+                                                            "prediction_results_all_sequential_withClinical.rds")
 
-prediction_results_all_withClinical = readRDS(p_prediction_results_all_withClinical)
+prediction_results_all_sequential_withClinical = readRDS(p_prediction_results_all_sequential_withClinical)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_withClinical)
+vaccines <- names(prediction_results_all_sequential_withClinical)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("clinical",
@@ -515,9 +515,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_withClinical[[vac]]))
+  if (is.null(prediction_results_all_sequential_withClinical[[vac]]))
     next
-  res_set <- prediction_results_all_withClinical[[vac]][[setn]]
+  res_set <- prediction_results_all_sequential_withClinical[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -578,7 +578,6 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
 
 # Print Spearman R heatmap
 print(heatmap_plot_R)
-
 
 # --- 3. sRMSE heatmap (0 = green -> 1 = white; values > 1 shown as white; NA -> grey) ----
 heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
@@ -656,7 +655,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
   ) +
   plot_annotation(
     title = "Evaluation metrics of CV predictions",
-    subtitle = "Cumulative prediction set approach , clinical variables not included",
+    subtitle = "Sequential prediction set approach, clinical variables not included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
       plot.subtitle = element_text(size = 20, face = "bold", hjust = 0.5)
@@ -672,7 +671,7 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_withClinical.pdf",
+  filename = "evaluation_combined_sequential_withClinical.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,
@@ -684,14 +683,14 @@ ggsave(
 
 # Load the 'without clinical' results
 
-p_prediction_results_all_withoutClinical = fs::path("output",
-                                                    "results",
-                                                    "prediction_results_all_withoutClinical.rds")
+p_prediction_results_all_sequential_withoutClinical = fs::path("output",
+                                                               "results",
+                                                               "prediction_results_all_sequential_withoutClinical.rds")
 
-prediction_results_all_withoutClinical = readRDS(p_prediction_results_all_withoutClinical)
+prediction_results_all_sequential_withoutClinical = readRDS(p_prediction_results_all_sequential_withoutClinical)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_withoutClinical)
+vaccines <- names(prediction_results_all_sequential_withoutClinical)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14", "Day 28")
@@ -711,9 +710,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_withoutClinical[[vac]]))
+  if (is.null(prediction_results_all_sequential_withoutClinical[[vac]]))
     next
-  res_set <- prediction_results_all_withoutClinical[[vac]][[setn]]
+  res_set <- prediction_results_all_sequential_withoutClinical[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -852,7 +851,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
   ) +
   plot_annotation(
     title = "Evaluation metrics of CV predictions",
-    subtitle = "Cumulative prediction set approach , clinical variables not included",
+    subtitle = "Sequential prediction set approach, clinical variables not included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
       plot.subtitle = element_text(size = 20, face = "bold", hjust = 0.5)
@@ -868,7 +867,7 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_withoutClinical.pdf",
+  filename = "evaluation_combined_sequential_withoutClinical.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,
