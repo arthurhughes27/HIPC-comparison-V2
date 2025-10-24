@@ -53,9 +53,13 @@ include_clinical_set = c(
 
 vaccine_set = names(prediction_results_all_sequential_withoutClinical)
 
-feature_set_set = unique(unlist(
-  lapply(prediction_results_all_sequential_withClinical, names)
-))
+all_sets <- unique(unlist(lapply(prediction_results_all_sequential_withClinical, names)))
+
+# Extract numeric part from strings like "day 7"
+day_sets <- all_sets[grepl("^Day\\s*[0-9]+$", all_sets)]
+day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
+
+feature_set_set <- c("clinical", paste0("Day ", sort(day_nums)))
 
 ### VARIABLE IMPORTANCE TAB ###
 
@@ -235,14 +239,13 @@ ui <- fluidPage(
         # Close sidebarPanel
         
         # Plot settings (main panel)
-        mainPanel(width = 9, div(
-          style = "text-align: center;",
+        mainPanel(
+          width = 9,
           plotOutput(
             outputId = "results_comparison_plot",
-            height = "1000px",
-            width  = "160%"
+            height = "600px"
           )
-        )) # Close mainPanel
+        ) # Close mainPanel
         
       ) # Close sidebarLayout
     ),
@@ -254,27 +257,22 @@ ui <- fluidPage(
       value = "cv_predictions_tab",
       sidebarLayout(
         sidebarPanel(
-          # Specify width of panel
           width = 3,
-          
-          # Update plot button
           actionButton(
             inputId = "cv_predictions_update",
             label   = "Update Figure",
             class   = "btn-primary",
             width   = '100%'
           ),
-          # close actionButton
           
-          # Data selection group
           wellPanel(
             style = "background-color: #c6d2ed;",
             h4("Results selection"),
             
-            # Which vaccine?
             tags$label(
               "Vaccine",
-              tags$span(icon("info-circle"), id    = "cv_predictions_vaccine_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "cv_predictions_vaccine_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "cv_predictions_vaccine",
@@ -290,18 +288,13 @@ ui <- fluidPage(
               trigger   = "hover"
             ),
             
-            # Which feature_set?
             tags$label(
               "Feature set",
-              tags$span(icon("info-circle"), id    = "cv_predictions_feature_set_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "cv_predictions_feature_set_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
-            selectInput(
-              inputId = "cv_predictions_feature_set",
-              label   = NULL,
-              choices = feature_set_set,
-              selected = feature_set_set[2],
-              multiple = FALSE
-            ),
+            ## <-- DYNAMIC UI here: server will render a selectInput for available feature sets
+            uiOutput("cv_predictions_feature_set_ui"),
             bsTooltip(
               id      = "cv_predictions_feature_set_info",
               title   = "Choose the feature set for which to display CV predictions",
@@ -309,10 +302,10 @@ ui <- fluidPage(
               trigger   = "hover"
             ),
             
-            # Results from which approach?
             tags$label(
               "Temporal feature selection approach:",
-              tags$span(icon("info-circle"), id    = "cv_predictions_approach_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "cv_predictions_approach_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "cv_predictions_approach",
@@ -328,10 +321,10 @@ ui <- fluidPage(
               trigger   = "hover"
             ),
             
-            # Include clinical variables?
             tags$label(
               "Include baseline clinical variables?",
-              tags$span(icon("info-circle"), id    = "cv_predictions_include_clinical_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "cv_predictions_include_clinical_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "cv_predictions_include_clinical",
@@ -346,26 +339,18 @@ ui <- fluidPage(
               placement = "right",
               trigger   = "hover"
             )
-          ),
-          # Close first wellPanel (data selection)
+          ), # close wellPanel
           
           # ---------- Download section ----------
           wellPanel(
             style = "background-color: #ced4da;",
             h4("Download Options"),
-            # choose format
             selectInput(
               inputId = "cv_predictions_download_format",
               label   = "Format of download:",
-              choices = c(
-                "PDF" = "pdf",
-                "PNG" = "png",
-                "JPEG" = "jpeg"
-              ),
+              choices = c("PDF" = "pdf", "PNG" = "png", "JPEG" = "jpeg"),
               selected = "pdf"
             ),
-            
-            # size controls (in inches)
             numericInput(
               inputId = "cv_predictions_download_width",
               label   = "Width of download (inches):",
@@ -378,15 +363,12 @@ ui <- fluidPage(
               value   = 15,
               min     = 1
             ),
-            
             numericInput(
               inputId = "cv_predictions_download_dpi",
               label   = "Resolution (DPI):",
               value   = 300,
               min     = 72
             ),
-            
-            ## Download plot button
             div(
               style = "width: 100%;",
               downloadButton(
@@ -395,52 +377,44 @@ ui <- fluidPage(
                 class    = "btn-success"
               )
             )
-          ) # Close download wellPanel
+          ) # close download wellPanel
           
-        ),
-        # Close sidebarPanel
+        ), # close sidebarPanel
         
-        # Plot settings (main panel)
-        mainPanel(width = 7, div(
-          style = "text-align: center;",
+        mainPanel(
+          width = 9,
           plotOutput(
             outputId = "cv_predictions_plot",
-            height = "1000px",
-            width  = "160%"
+            height = "600px"
           )
-        )) # Close mainPanel
+        ) # close mainPanel
         
-      ) # Close sidebarLayout
-    ),
+      ) # close sidebarLayout
+    ), # close tabPanel
     # Close tabPanel for cv predictions tab
     
-    ### TAB 3 : VARIABLE IMPORTANCE ###
+    ### TAB 2 : VARIABLE IMPORTANCE ###
     tabPanel(
-      title = "Variable importance",
+      title = "Variable Importance",
       value = "variable_importance_tab",
       sidebarLayout(
         sidebarPanel(
-          # Specify width of panel
           width = 3,
-          
-          # Update plot button
           actionButton(
             inputId = "variable_importance_update",
             label   = "Update Figure",
             class   = "btn-primary",
             width   = '100%'
           ),
-          # close actionButton
           
-          # Data selection group
           wellPanel(
             style = "background-color: #c6d2ed;",
             h4("Results selection"),
             
-            # Which vaccine?
             tags$label(
               "Vaccine",
-              tags$span(icon("info-circle"), id    = "variable_importance_vaccine_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "variable_importance_vaccine_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "variable_importance_vaccine",
@@ -451,34 +425,29 @@ ui <- fluidPage(
             ),
             bsTooltip(
               id      = "variable_importance_vaccine_info",
-              title   = "Choose the vaccine for which to display CV predictions",
+              title   = "Choose the vaccine for which to display variable importance",
               placement = "right",
               trigger   = "hover"
             ),
             
-            # Which feature_set?
             tags$label(
               "Feature set",
-              tags$span(icon("info-circle"), id    = "variable_importance_feature_set_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "variable_importance_feature_set_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
-            selectInput(
-              inputId = "variable_importance_feature_set",
-              label   = NULL,
-              choices = feature_set_set,
-              selected = feature_set_set[2],
-              multiple = FALSE
-            ),
+            ## <-- DYNAMIC UI here: server will render a selectInput for available feature sets
+            uiOutput("variable_importance_feature_set_ui"),
             bsTooltip(
               id      = "variable_importance_feature_set_info",
-              title   = "Choose the feature set for which to display variable importance",
+              title   = "Choose the feature set for which to display CV predictions",
               placement = "right",
               trigger   = "hover"
             ),
             
-            # Results from which approach?
             tags$label(
               "Temporal feature selection approach:",
-              tags$span(icon("info-circle"), id    = "variable_importance_approach_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "variable_importance_approach_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "variable_importance_approach",
@@ -494,10 +463,10 @@ ui <- fluidPage(
               trigger   = "hover"
             ),
             
-            # Include clinical variables?
             tags$label(
               "Include baseline clinical variables?",
-              tags$span(icon("info-circle"), id    = "variable_importance_include_clinical_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+              tags$span(icon("info-circle"), id = "variable_importance_include_clinical_info",
+                        style = "cursor: help; color: #337ab7; margin-left: 4px;")
             ),
             selectInput(
               inputId = "variable_importance_include_clinical",
@@ -512,26 +481,18 @@ ui <- fluidPage(
               placement = "right",
               trigger   = "hover"
             )
-          ),
-          # Close first wellPanel (data selection)
+          ), # close wellPanel
           
           # ---------- Download section ----------
           wellPanel(
             style = "background-color: #ced4da;",
             h4("Download Options"),
-            # choose format
             selectInput(
               inputId = "variable_importance_download_format",
               label   = "Format of download:",
-              choices = c(
-                "PDF" = "pdf",
-                "PNG" = "png",
-                "JPEG" = "jpeg"
-              ),
+              choices = c("PDF" = "pdf", "PNG" = "png", "JPEG" = "jpeg"),
               selected = "pdf"
             ),
-            
-            # size controls (in inches)
             numericInput(
               inputId = "variable_importance_download_width",
               label   = "Width of download (inches):",
@@ -544,45 +505,49 @@ ui <- fluidPage(
               value   = 15,
               min     = 1
             ),
-            
             numericInput(
               inputId = "variable_importance_download_dpi",
               label   = "Resolution (DPI):",
               value   = 300,
               min     = 72
             ),
-            
-            ## Download plot button
             div(
               style = "width: 100%;",
               downloadButton(
                 outputId = "download_variable_importance_plot",
-                label    = "Download Variable Importance Plot",
+                label    = "Download CV Predictions Plot",
                 class    = "btn-success"
               )
             )
-          ) # Close download wellPanel
+          ) # close download wellPanel
           
-        ),
-        # Close sidebarPanel
+        ), # close sidebarPanel
         
-        # Plot settings (main panel)
-        mainPanel(width = 9, div(
-          style = "text-align: center;",
+        mainPanel(
+          width = 9,
           plotOutput(
             outputId = "variable_importance_plot",
-            height = "1000px",
-            width  = "160%"
+            height = "600px"
           )
-        )) # Close mainPanel
+        ) # close mainPanel
         
-      ) # Close sidebarLayout
-    ) # Close tabPanel for variable importance tab
+      ) # close sidebarLayout
+    ), # Close tabPanel for variable importance tab
     
   ) # Close tabsetPanel
   
 ) # Close fluidPage
 
+### EXAMPLE INPUTS FOR DEBUGGING ###
+
+input = list()
+input$results_comparison_approach = "cumulative"
+input$results_comparison_include_clinical = "withClinical"
+
+input$cv_predictions_approach = "cumulative"
+input$cv_predictions_include_clinical = "withClinical"
+input$cv_predictions_vaccine = "Yellow Fever (LV)"
+input$cv_predictions_feature_set = "Day 0"
 
 ### SERVER FUNCTION ###
 
@@ -801,6 +766,294 @@ server <- function(input, output, session) {
     }
   )
   ### END RESULTS COMPARISON TAB ###
+  
+  ### BEGIN CV PREDICTIONS TAB ###
+  
+  # 1) Dynamic UI for feature sets (timepoints) depending on vaccine / approach / include_clinical
+  output$cv_predictions_feature_set_ui <- renderUI({
+    # Ensure the controlling inputs exist
+    req(input$cv_predictions_vaccine, input$cv_predictions_approach, input$cv_predictions_include_clinical)
+    
+    # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
+    approach_key <- tolower(gsub("\\s+", "", input$cv_predictions_approach))
+    
+    # Determine the includeClinical suffix expected in your object names.
+    # If the input label contains "with" we use "withClinical", otherwise "withoutClinical".
+    include_label <- tolower(input$cv_predictions_include_clinical)
+    include_suffix <- if (grepl("with", include_label, ignore.case = TRUE)) {
+      "withClinical"
+    } else {
+      "withoutClinical"
+    }
+    
+    # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
+    results_name <- paste0("prediction_results_all_", approach_key, "_", include_suffix)
+    
+    # Try to fetch the object safely (returns NULL if missing)
+    results_obj <- get0(results_name, envir = .GlobalEnv)
+    
+    choices <- character(0)
+    if (!is.null(results_obj) && input$cv_predictions_vaccine %in% names(results_obj)) {
+      vaccine_entry <- results_obj[[ input$cv_predictions_vaccine ]]
+      if (is.list(vaccine_entry) && length(vaccine_entry) > 0) {
+        choices <- names(vaccine_entry)
+      }
+    }
+    
+    if (length(choices) == 0) {
+      # No feature sets available: show a disabled-looking select with an informative label
+      selectInput(
+        inputId = "cv_predictions_feature_set",
+        label = NULL,
+        choices = c("No feature sets available" = ""),
+        selected = ""
+      )
+    } else {
+      # keep previous selection if still valid, otherwise choose the first available
+      previous <- isolate(input$cv_predictions_feature_set)
+      selected_choice <- if (!is.null(previous) && previous %in% choices) previous else choices[1]
+      selectInput(
+        inputId = "cv_predictions_feature_set",
+        label = NULL,
+        choices = choices,
+        selected = selected_choice
+      )
+    }
+  })
+  
+  # 2) Reactive that builds (and returns) the ggplot object for the selected options
+  cv_predictions_plot <- reactive({
+    # This line makes the reactive re-run when the user clicks the Update Figure button
+    input$cv_predictions_update
+    
+    isolate({
+      # build the object name the same way we do in renderUI
+      approach_key <- tolower(gsub("\\s+", "", input$cv_predictions_approach))
+      include_label <- tolower(input$cv_predictions_include_clinical)
+      include_suffix <- if (grepl("with", include_label, ignore.case = TRUE)) "withClinical" else "withoutClinical"
+      results_name <- paste0("prediction_results_all_", approach_key, "_", include_suffix)
+      
+      # Safely fetch the results object
+      selected_results <- get0(results_name, envir = .GlobalEnv)
+      validate(need(!is.null(selected_results),
+                    paste0("Results object '", results_name, "' not found in the global environment.")))
+      
+      # Ensure the vaccine exists in the object
+      validate(need(input$cv_predictions_vaccine %in% names(selected_results),
+                    "Selected vaccine not found in the selected results object."))
+      
+      selected_results_vaccine <- selected_results[[ input$cv_predictions_vaccine ]]
+      
+      # Ensure feature set is non-empty and exists
+      validate(need(!is.null(input$cv_predictions_feature_set) && nzchar(input$cv_predictions_feature_set),
+                    "No feature set selected."))
+      validate(need(input$cv_predictions_feature_set %in% names(selected_results_vaccine),
+                    "Selected feature set is not available for this vaccine / approach."))
+      
+      selected_results_vaccine_feature_set <- selected_results_vaccine[[ input$cv_predictions_feature_set ]]
+      
+      # Try to extract the plot object; expect it under [["plots"]][["cv_results"]]
+      plot_obj <- NULL
+      if (is.list(selected_results_vaccine_feature_set) &&
+          !is.null(selected_results_vaccine_feature_set[["plots"]]) &&
+          !is.null(selected_results_vaccine_feature_set[["plots"]][["cv_results"]])) {
+        plot_obj <- selected_results_vaccine_feature_set[["plots"]][["cv_results"]]
+      }
+      
+      validate(need(!is.null(plot_obj), "Plot not found for the selected vaccine / feature set / approach."))
+      
+      # Return the ggplot object (or base plot object). renderPlot will print it.
+      plot_obj
+    }) # end isolate
+  }) # end reactive
+  
+  # 3) Render the plot in the UI
+  output$cv_predictions_plot <- renderPlot({
+    # cv_predictions_plot() returns a ggplot object (or similar). print it so it is drawn correctly.
+    p <- cv_predictions_plot()
+    # If it's a ggplot, print; if it's a plotting expression already drawn by base graphics, call it directly.
+    if (inherits(p, "ggplot")) {
+      print(p)
+    } else {
+      # attempt to plot generic R plot objects
+      tryCatch({
+        print(p)
+      }, error = function(e) {
+        # fallback: show a text message if the object can't be plotted
+        plot.new()
+        text(0.5, 0.5, "Unable to render the selected plot object.")
+      })
+    }
+  })
+  
+  # 4) Download handler (unchanged except using get0-safe reactive above)
+  output$download_cv_predictions_plot <- downloadHandler(
+    filename = function() {
+      req(input$cv_predictions_download_format)
+      paste0("cv_predictions_", Sys.Date(), ".", input$cv_predictions_download_format)
+    },
+    content = function(file) {
+      # ensure the plot reactive is available
+      req(cv_predictions_plot())
+      
+      # ggsave expects a ggplot object; if your object is base graphics, you'd need a different approach.
+      ggsave(
+        filename = file,
+        plot     = cv_predictions_plot(),
+        device   = input$cv_predictions_download_format,
+        width    = input$cv_predictions_download_width,
+        height   = input$cv_predictions_download_height,
+        dpi      = input$cv_predictions_download_dpi,
+        units    = "in"
+      )
+    }
+  )
+  
+  ### END CV PREDICTIONS TAB ### 
+  
+  ### BEGIN VARIABLE IMPORTANCE TAB ###
+  
+  # 1) Dynamic UI for feature sets (timepoints) depending on vaccine / approach / include_clinical
+  output$variable_importance_feature_set_ui <- renderUI({
+    # Ensure the controlling inputs exist
+    req(input$variable_importance_vaccine, input$variable_importance_approach, input$variable_importance_include_clinical)
+    
+    # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
+    approach_key <- tolower(gsub("\\s+", "", input$variable_importance_approach))
+    
+    # Determine the includeClinical suffix expected in your object names.
+    # If the input label contains "with" we use "withClinical", otherwise "withoutClinical".
+    include_label <- tolower(input$variable_importance_include_clinical)
+    include_suffix <- if (grepl("with", include_label, ignore.case = TRUE)) {
+      "withClinical"
+    } else {
+      "withoutClinical"
+    }
+    
+    # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
+    results_name <- paste0("prediction_results_all_", approach_key, "_", include_suffix)
+    
+    # Try to fetch the object safely (returns NULL if missing)
+    results_obj <- get0(results_name, envir = .GlobalEnv)
+    
+    choices <- character(0)
+    if (!is.null(results_obj) && input$variable_importance_vaccine %in% names(results_obj)) {
+      vaccine_entry <- results_obj[[ input$variable_importance_vaccine ]]
+      if (is.list(vaccine_entry) && length(vaccine_entry) > 0) {
+        choices <- names(vaccine_entry)
+      }
+    }
+    
+    if (length(choices) == 0) {
+      # No feature sets available: show a disabled-looking select with an informative label
+      selectInput(
+        inputId = "variable_importance_feature_set",
+        label = NULL,
+        choices = c("No feature sets available" = ""),
+        selected = ""
+      )
+    } else {
+      # keep previous selection if still valid, otherwise choose the first available
+      previous <- isolate(input$variable_importance_feature_set)
+      selected_choice <- if (!is.null(previous) && previous %in% choices) previous else choices[1]
+      selectInput(
+        inputId = "variable_importance_feature_set",
+        label = NULL,
+        choices = choices,
+        selected = selected_choice
+      )
+    }
+  })
+  
+  # 2) Reactive that builds (and returns) the ggplot object for the selected options
+  variable_importance_plot <- reactive({
+    # This line makes the reactive re-run when the user clicks the Update Figure button
+    input$variable_importance_update
+    
+    isolate({
+      # build the object name the same way we do in renderUI
+      approach_key <- tolower(gsub("\\s+", "", input$variable_importance_approach))
+      include_label <- tolower(input$variable_importance_include_clinical)
+      include_suffix <- if (grepl("with", include_label, ignore.case = TRUE)) "withClinical" else "withoutClinical"
+      results_name <- paste0("prediction_results_all_", approach_key, "_", include_suffix)
+      
+      # Safely fetch the results object
+      selected_results <- get0(results_name, envir = .GlobalEnv)
+      validate(need(!is.null(selected_results),
+                    paste0("Results object '", results_name, "' not found in the global environment.")))
+      
+      # Ensure the vaccine exists in the object
+      validate(need(input$variable_importance_vaccine %in% names(selected_results),
+                    "Selected vaccine not found in the selected results object."))
+      
+      selected_results_vaccine <- selected_results[[ input$variable_importance_vaccine ]]
+      
+      # Ensure feature set is non-empty and exists
+      validate(need(!is.null(input$variable_importance_feature_set) && nzchar(input$variable_importance_feature_set),
+                    "No feature set selected."))
+      validate(need(input$variable_importance_feature_set %in% names(selected_results_vaccine),
+                    "Selected feature set is not available for this vaccine / approach."))
+      
+      selected_results_vaccine_feature_set <- selected_results_vaccine[[ input$variable_importance_feature_set ]]
+      
+      # Try to extract the plot object; expect it under [["plots"]][["var_imp"]]
+      plot_obj <- NULL
+      if (is.list(selected_results_vaccine_feature_set) &&
+          !is.null(selected_results_vaccine_feature_set[["plots"]]) &&
+          !is.null(selected_results_vaccine_feature_set[["plots"]][["var_imp"]])) {
+        plot_obj <- selected_results_vaccine_feature_set[["plots"]][["var_imp"]]
+      }
+      
+      validate(need(!is.null(plot_obj), "Plot not found for the selected vaccine / feature set / approach."))
+      
+      # Return the ggplot object (or base plot object). renderPlot will print it.
+      plot_obj
+    }) # end isolate
+  }) # end reactive
+  
+  # 3) Render the plot in the UI
+  output$variable_importance_plot <- renderPlot({
+    # variable_importance_plot() returns a ggplot object (or similar). print it so it is drawn correctly.
+    p <- variable_importance_plot()
+    # If it's a ggplot, print; if it's a plotting expression already drawn by base graphics, call it directly.
+    if (inherits(p, "ggplot")) {
+      print(p)
+    } else {
+      # attempt to plot generic R plot objects
+      tryCatch({
+        print(p)
+      }, error = function(e) {
+        # fallback: show a text message if the object can't be plotted
+        plot.new()
+        text(0.5, 0.5, "Unable to render the selected plot object.")
+      })
+    }
+  })
+  
+  # 4) Download handler (unchanged except using get0-safe reactive above)
+  output$download_variable_importance_plot <- downloadHandler(
+    filename = function() {
+      req(input$variable_importance_download_format)
+      paste0("variable_importance_", Sys.Date(), ".", input$variable_importance_download_format)
+    },
+    content = function(file) {
+      # ensure the plot reactive is available
+      req(variable_importance_plot())
+      
+      # ggsave expects a ggplot object; if your object is base graphics, you'd need a different approach.
+      ggsave(
+        filename = file,
+        plot     = variable_importance_plot(),
+        device   = input$variable_importance_download_format,
+        width    = input$variable_importance_download_width,
+        height   = input$variable_importance_download_height,
+        dpi      = input$variable_importance_download_dpi,
+        units    = "in"
+      )
+    }
+  )
+  
+  ### END VARIABLE IMPORTANCE TAB ### 
   
 
 } # close server function

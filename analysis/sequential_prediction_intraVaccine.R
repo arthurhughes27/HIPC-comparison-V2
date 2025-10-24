@@ -44,7 +44,7 @@ prediction_set_colours = list(
 )
 
 
-# Write a function to perform prediction for a given vaccine with information sequential up to a given timepoint
+# Write a function to perform prediction for a given vaccine with information sequential at a given timepoint
 sequential_prediction_function = function(prediction_set_list,
                                           vaccine,
                                           set_name = "clinical",
@@ -221,13 +221,13 @@ sequential_prediction_function = function(prediction_set_list,
     subtitle = paste0("Baseline demographic information only")
   } else if (include_clinical && timepoint_number != "clinical") {
     subtitle = paste0(
-      "Gene-set information up to day ",
+      "Gene-set information at day ",
       timepoint_number,
       " post-vaccination (demographic variables included)"
     )
   } else {
     subtitle = paste0(
-      "Gene-set information up to day ",
+      "Gene-set information at day ",
       timepoint_number,
       " post-vaccination (demographic variables NOT included)"
     )
