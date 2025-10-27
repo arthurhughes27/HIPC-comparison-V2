@@ -189,7 +189,7 @@ p3 <- ggplot(
   
   scale_fill_manual(values = vaccine_colours, name = "Vaccine") +
   
-  labs(x = "Vaccine", y = "log2(Antibody value)", title = "Distribution of antibody responses per vaccine") +
+  labs(x = "Vaccine", y = "log2(Max fold-change)", title = "Distribution of antibody responses per vaccine") +
   
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.05))) +
   

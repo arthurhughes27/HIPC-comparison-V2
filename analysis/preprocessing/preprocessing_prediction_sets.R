@@ -309,24 +309,6 @@ d14 = compute_geneset_fc(
   timepoint = 14
 )
 
-d28 = compute_geneset_fc(
-  df = hipc_merged_all_norm_response,
-  genesets = BTM[["genesets"]],
-  geneset_names = BTM[["geneset.names.descriptions"]],
-  id_col = "participant_id",
-  time_col = "study_time_collected",
-  timepoint = 28
-)
-
-d70 = compute_geneset_fc(
-  df = hipc_merged_all_norm_response,
-  genesets = BTM[["genesets"]],
-  geneset_names = BTM[["geneset.names.descriptions"]],
-  id_col = "participant_id",
-  time_col = "study_time_collected",
-  timepoint = 70
-)
-
 # For the sequential approach, we save each dataframe per vaccine per timepoint
 # containing only the information present at that timepoint
 
@@ -450,9 +432,9 @@ cumulative_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
 specified_timepoints_list_sequential <- list(
   "Meningococcus (PS)" = c(0, 3, 7),
   "Meningococcus (CJ)" = c(0, 3, 7),
-  "Influenza (IN)" = c(0, 1, 2, 3, 4, 7, 14, 28, 70),
+  "Influenza (IN)" = c(0, 1, 2, 3, 4, 7, 14),
   "Hepatitis A/B (IN/RP)" = c(0, 7),
-  "Yellow Fever (LV)" = c(0, 0.17, 3, 7, 10, 14, 28)
+  "Yellow Fever (LV)" = c(0, 0.17, 3, 7, 10, 14)
 )
 
 specified_timepoints_list_cumulative <- list(
@@ -460,7 +442,7 @@ specified_timepoints_list_cumulative <- list(
   "Meningococcus (CJ)" = c(0, 3, 7),
   "Influenza (IN)" = c(0, 1, 3, 7, 14),
   "Hepatitis A/B (IN/RP)" = c(0, 7),
-  "Yellow Fever (LV)" = c(0, 3, 7, 10, 14, 28)
+  "Yellow Fever (LV)" = c(0, 3, 7, 10, 14)
 )
 
 # Now apply the sequential merge function to each 

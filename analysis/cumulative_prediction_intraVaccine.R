@@ -265,7 +265,7 @@ cumulative_prediction_function = function(prediction_set_list,
       size = 10,
       fill = "white",
       alpha = 0.8,
-      label.size = 0     # no border line
+      linewidth = 0     # no border line
     ) +
     theme_minimal(base_size = 18) +
     theme(
@@ -320,14 +320,15 @@ cumulative_prediction_function = function(prediction_set_list,
   # Plot average standardised variable importance
   vi_plot <- plot_df %>%
     ggplot(aes(x = mean_imp, y = feature)) +
-    geom_errorbarh(
+    geom_errorbar(
       aes(
         xmin = xmin,
         xmax = xmax,
         colour = feature_group
       ),
       width = 0.25,
-      size = 1
+      size = 1,
+      orientation = "y"
     ) +
     geom_point(aes(colour = feature_group), size = 3) +
     scale_colour_manual(
@@ -349,10 +350,10 @@ cumulative_prediction_function = function(prediction_set_list,
     labs(
       x = "Mean standardised training-set variable importance",
       y = NULL,
-      title = "Mean standardised training variable importance (training)",
-      subtitle = paste0("Top ", min(topN, length(
+      title = paste0("Mean standardised variable importance (top ", min(topN, length(
         unique(vi_summary$feature)
-      )), " features across folds")
+      )), " features)"),
+      subtitle = paste0("sRMSE = ", round(metrics$sRMSE, 2), ", \u03C1 = ", round(metrics$Rspearman, 2))
     ) +
     theme_minimal() +
     theme(
@@ -557,7 +558,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
             colour = "black",
             size = 5) +
   scale_fill_gradient(
-    name = "R",
+    name = "\u03C1",
     low = "white",
     high = "#0072B2",
     # blue
@@ -569,7 +570,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Spearman R by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Spearman \u03C1 by vaccine and predictor set") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -611,7 +612,7 @@ print(heatmap_plot_sRMSE)
 
 # --- Modify heatmap plots ---
 heatmap_plot_R_mod <- heatmap_plot_R +
-  ggtitle("Spearman R") +
+  ggtitle("Spearman \u03C1") +
   theme(
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
@@ -752,7 +753,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
             colour = "black",
             size = 5) +
   scale_fill_gradient(
-    name = "R",
+    name = "\u03C1",
     low = "white",
     high = "#0072B2",
     # blue
@@ -764,7 +765,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Spearman R by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Spearman \u03C1 by vaccine and predictor set") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -807,7 +808,7 @@ print(heatmap_plot_sRMSE)
 
 # --- Modify heatmap plots ---
 heatmap_plot_R_mod <- heatmap_plot_R +
-  ggtitle("Spearman R") +
+  ggtitle("Spearman \u03C1") +
   theme(
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),

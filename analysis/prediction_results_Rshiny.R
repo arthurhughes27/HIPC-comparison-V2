@@ -485,7 +485,7 @@ ui <- fluidPage(
               label   = NULL,
               value   = 20,
               min     = 10,
-              max = 50,
+              max = 100,
               step = 5
             ),
             bsTooltip(
@@ -664,7 +664,7 @@ server <- function(input, output, session) {
                   colour = "black",
                   size = 5) +
         scale_fill_gradient(
-          name = "R",
+          name = "\u03C1",
           low = "white",
           high = "#0072B2",
           # blue
@@ -678,7 +678,7 @@ server <- function(input, output, session) {
         coord_fixed(ratio = 1) +   # square tiles
         labs(x = "Predictor set", y = "Vaccine") +
         theme_minimal(base_size = 20) +
-        ggtitle("Spearman R") +
+        ggtitle("Spearman \u03C1") +
         theme(
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -1067,10 +1067,10 @@ server <- function(input, output, session) {
       # build the object name the same way we do in renderUI
       approach_key <- tolower(gsub("\\s+", "", input$variable_importance_approach))
       include_label <- tolower(input$variable_importance_include_clinical)
-      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE))
-        "withClinical"
-      else
+      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)){
+        "withClinical" } else {
         "withoutClinical"
+      }
       results_name <- paste0("prediction_results_all_",
                              approach_key,
                              "_",
@@ -1114,6 +1114,8 @@ server <- function(input, output, session) {
       
       # Try to extract the plot object; expect it under [["var_imp"]]
       
+      metrics = selected_results_vaccine_feature_set[["metrics"]]
+      
       plot_obj = selected_results_vaccine_feature_set[["var_imp"]]
       
       validate(need(
@@ -1146,14 +1148,15 @@ server <- function(input, output, session) {
       # Plot average standardised variable importance
       vi_plot <- plot_df %>%
         ggplot(aes(x = mean_imp, y = feature)) +
-        geom_errorbarh(
+        geom_errorbar(
           aes(
             xmin = xmin,
             xmax = xmax,
             colour = feature_group
           ),
           width = 0.25,
-          size = 1
+          size = 1,
+          orientation = "y"
         ) +
         geom_point(aes(colour = feature_group), size = 3) +
         scale_colour_manual(
@@ -1175,19 +1178,15 @@ server <- function(input, output, session) {
         labs(
           x = "Mean standardised training-set variable importance",
           y = NULL,
-          title = "Mean standardised training variable importance (training)",
-          subtitle = paste0(
-            "Top ",
-            min(input$variable_importance_topN, length(unique(
-              plot_obj$feature
-            ))),
-            " features across folds"
-          )
-        ) +
+          title = paste0("Mean standardised variable importance (top ", min(input$variable_importance_topN, length(
+            unique(plot_obj$feature)
+          )), " features)"),
+          subtitle = paste0("sRMSE = ", round(metrics$sRMSE, 2), ", \u03C1 = ", round(metrics$Rspearman, 2))
+          ) +
         theme_minimal() +
         theme(
           plot.title = element_text(
-            size = 25,
+            size = 23,
             face = "bold",
             hjust = 0.5
           ),
