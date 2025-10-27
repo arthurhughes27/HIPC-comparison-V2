@@ -32,15 +32,14 @@ p_load_cumulative_prediction_sets <- fs::path(processed_data_folder,
 cumulative_prediction_sets = readRDS(p_load_cumulative_prediction_sets)
 
 # Assign each prediction set a colour code for later visualisation
-prediction_set_colours = list(
+rediction_set_colours = list(
   "clinical" = "#001219",
-  "Day 0" = "#005f73",
-  "Day 1" = "#0a9396",
-  "Day 3" = "#94d2bd",
-  "Day 7" = "#e9d8a6",
-  "Day 10" = "#ee9b00",
-  "Day 14" = "#bb3e03",
-  "Day 28" = "#ae2012"
+  "Day 0" = "#0a9396",
+  "Day 1" = "#e9d8a6",
+  "Day 3" = "#ee9b00",
+  "Day 7" = "#bb3e03",
+  "Day 10" = "#ae2012",
+  "Day 14" = "#780000"
 )
 
 
@@ -56,6 +55,10 @@ cumulative_prediction_function = function(prediction_set_list,
                                           seed = 22072025,
                                           n_cores = 1,
                                           verbose = TRUE) {
+  # Set seeds
+  set.seed(seed)
+  RNGkind("L'Ecuyer-CMRG")
+  
   # Extract the number corresponding to the prediction set e.g. X from "Day X"
   if (!set_name == "clinical") {
     # Make an exception if the set is the clinical variables only
@@ -93,6 +96,7 @@ cumulative_prediction_function = function(prediction_set_list,
   # initialise parallel computation procedure if desired
   if (n_cores > 1) {
     cl <- makePSOCKcluster(n_cores)
+    parallel::clusterSetRNGStream(cl, iseed = seed)
     registerDoParallel(cl)
   }
   
