@@ -877,8 +877,3 @@ ggsave(
   height = 25,
   units = "cm"
 )
-
-
-# CUSTOM RESULTS REPRESENTATIONS # 
-## Here, we make custom figures for selected results ## 
-# First, load the desired results 
