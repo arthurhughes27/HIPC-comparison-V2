@@ -9,33 +9,61 @@ suppressPackageStartupMessages({
 
 # Load in all the possible results that shiny may need access to
 
-# Cumulative approach, with clinical variables
-p_prediction_results_all_cumulative_withClinical = fs::path("output",
+# Cumulative approach, with clinical variables, with TBA
+p_prediction_results_all_cumulative_withClinical_withTBA = fs::path("output",
                                                             "results",
-                                                            "prediction_results_all_cumulative_withClinical.rds")
+                                                            "prediction_results_all_cumulative_withClinical_withTBA.rds")
 
-prediction_results_all_cumulative_withClinical = readRDS(p_prediction_results_all_cumulative_withClinical)
+prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withTBA)
 
-# Cumulative approach, without clinical variables
-p_prediction_results_all_cumulative_withoutClinical = fs::path("output",
+# Cumulative approach, without clinical variables, with TBA
+p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path("output",
                                                                "results",
-                                                               "prediction_results_all_cumulative_withoutClinical.rds")
+                                                               "prediction_results_all_cumulative_withoutClinical_withTBA.rds")
 
-prediction_results_all_cumulative_withoutClinical = readRDS(p_prediction_results_all_cumulative_withoutClinical)
+prediction_results_all_cumulative_withoutClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withTBA)
 
-# Sequential approach, with clinical variables
-p_prediction_results_all_sequential_withClinical = fs::path("output",
+# Sequential approach, with clinical variables, with TBA
+p_prediction_results_all_sequential_withClinical_withTBA = fs::path("output",
                                                             "results",
-                                                            "prediction_results_all_sequential_withClinical.rds")
+                                                            "prediction_results_all_sequential_withClinical_withTBA.rds")
 
-prediction_results_all_sequential_withClinical = readRDS(p_prediction_results_all_sequential_withClinical)
+prediction_results_all_sequential_withClinical_withTBA = readRDS(p_prediction_results_all_sequential_withClinical_withTBA)
 
-# Sequential approach, without clinical variables
-p_prediction_results_all_sequential_withoutClinical = fs::path("output",
+# Sequential approach, without clinical variables, with TBA
+p_prediction_results_all_sequential_withoutClinical_withTBA = fs::path("output",
                                                                "results",
-                                                               "prediction_results_all_sequential_withoutClinical.rds")
+                                                               "prediction_results_all_sequential_withoutClinical_withTBA.rds")
 
-prediction_results_all_sequential_withoutClinical = readRDS(p_prediction_results_all_sequential_withoutClinical)
+prediction_results_all_sequential_withoutClinical_withTBA = readRDS(p_prediction_results_all_sequential_withoutClinical_withTBA)
+
+# Cumulative approach, with clinical variables, without TBA
+p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path("output",
+                                                                    "results",
+                                                                    "prediction_results_all_cumulative_withClinical_withoutTBA.rds")
+
+prediction_results_all_cumulative_withClinical_withoutTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withoutTBA)
+
+# Cumulative approach, without clinical variables, without TBA
+p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path("output",
+                                                                       "results",
+                                                                       "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds")
+
+prediction_results_all_cumulative_withoutClinical_withoutTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withoutTBA)
+
+# Sequential approach, with clinical variables, without TBA
+p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path("output",
+                                                                    "results",
+                                                                    "prediction_results_all_sequential_withClinical_withoutTBA.rds")
+
+prediction_results_all_sequential_withClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withClinical_withoutTBA)
+
+# Sequential approach, without clinical variables, without TBA
+p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path("output",
+                                                                       "results",
+                                                                       "prediction_results_all_sequential_withoutClinical_withoutTBA.rds")
+
+prediction_results_all_sequential_withoutClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withoutClinical_withoutTBA)
 
 ### DEFINE USER PARAMETERS ###
 
@@ -48,12 +76,14 @@ include_clinical_set = c(
   "Do not include clinical variables" = "withoutClinical"
 )
 
+include_tba_set = c("Include TBA" = "withTBA", "Exclude TBA" = "withoutTBA")
+
 ### CV PREDICTIONS TAB ###
 
-vaccine_set = names(prediction_results_all_sequential_withoutClinical)
+vaccine_set = names(prediction_results_all_sequential_withoutClinical_withTBA)
 
 all_sets <- unique(unlist(
-  lapply(prediction_results_all_sequential_withClinical, names)
+  lapply(prediction_results_all_sequential_withClinical_withTBA, names)
 ))
 
 # Extract numeric part from strings like "day 7"
@@ -182,6 +212,44 @@ ui <- fluidPage(
             bsTooltip(
               id      = "results_comparison_include_clinical_info",
               title   = "Include baseline clinical variables as predictors?",
+              placement = "right",
+              trigger   = "hover"
+            ),
+            
+            # Include TBA modules?
+            tags$label(
+              "Include TBA modules?",
+              tags$span(icon("info-circle"), id    = "results_comparison_include_tba_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+            ),
+            selectInput(
+              inputId = "results_comparison_include_tba",
+              label   = NULL,
+              choices = include_tba_set,
+              selected = include_tba_set[2],
+              multiple = FALSE
+            ),
+            bsTooltip(
+              id      = "results_comparison_include_tba_info",
+              title   = "Include modules without labels as predictors?",
+              placement = "right",
+              trigger   = "hover"
+            ),
+            
+            # Include TBA modules?
+            tags$label(
+              "Include which feature sets?",
+              tags$span(icon("info-circle"), id    = "results_comparison_feature_set_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+            ),
+            selectInput(
+              inputId = "results_comparison_feature_set",
+              label   = NULL,
+              choices = feature_set_set,
+              selected = feature_set_set,
+              multiple = TRUE
+            ),
+            bsTooltip(
+              id      = "results_comparison_feature_set_info",
+              title   = "Include which feature sets for the evaluation?",
               placement = "right",
               trigger   = "hover"
             )
@@ -332,6 +400,25 @@ ui <- fluidPage(
               title   = "Include baseline clinical variables as predictors?",
               placement = "right",
               trigger   = "hover"
+            ),
+            
+            # Include TBA modules?
+            tags$label(
+              "Include TBA modules?",
+              tags$span(icon("info-circle"), id    = "cv_predictions_include_tba_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+            ),
+            selectInput(
+              inputId = "cv_predictions_include_tba",
+              label   = NULL,
+              choices = include_tba_set,
+              selected = include_tba_set[2],
+              multiple = FALSE
+            ),
+            bsTooltip(
+              id      = "cv_predictions_include_tba_info",
+              title   = "Include modules without labels as predictors?",
+              placement = "right",
+              trigger   = "hover"
             )
           ),
           # close wellPanel
@@ -475,6 +562,25 @@ ui <- fluidPage(
               placement = "right",
               trigger   = "hover"
             ),
+            
+            # Include TBA modules?
+            tags$label(
+              "Include TBA modules?",
+              tags$span(icon("info-circle"), id    = "variable_importance_include_tba_info", style = "cursor: help; color: #337ab7; margin-left: 4px;")
+            ),
+            selectInput(
+              inputId = "variable_importance_include_tba",
+              label   = NULL,
+              choices = include_tba_set,
+              selected = include_tba_set[2],
+              multiple = FALSE
+            ),
+            bsTooltip(
+              id      = "variable_importance_include_tba_info",
+              title   = "Include modules without labels as predictors?",
+              placement = "right",
+              trigger   = "hover"
+            ),
             # Number of variables to include
             tags$label(
               "Top N variables to include",
@@ -560,18 +666,22 @@ ui <- fluidPage(
 ### EXAMPLE INPUTS FOR DEBUGGING ###
 
 input = list()
-input$results_comparison_approach = "cumulative"
-input$results_comparison_include_clinical = "withClinical"
+input$results_comparison_approach = "sequential"
+input$results_comparison_include_clinical = "withoutClinical"
+input$results_comparison_include_tba = "withoutTBA"
+input$results_comparison_feature_set = feature_set_set
 
-input$cv_predictions_approach = "cumulative"
+input$cv_predictions_approach = "sequential"
 input$cv_predictions_include_clinical = "withClinical"
 input$cv_predictions_vaccine = "Yellow Fever (LV)"
 input$cv_predictions_feature_set = "Day 0"
+input$cv_predictions_include_tba = "withoutTBA"
 
-input$variable_importance_approach = "cumulative"
-input$variable_importance_include_clinical = "withoutClinical"
+input$variable_importance_approach = "sequential"
+input$variable_importance_include_clinical = "withClinical"
+input$variable_importance_include_tba = "withTBA"
 input$variable_importance_vaccine = "Yellow Fever (LV)"
-input$variable_importance_feature_set = "Day 0"
+input$variable_importance_feature_set = "Day 3"
 input$variable_importance_topN = 30
 
 ### SERVER FUNCTION ###
@@ -586,7 +696,9 @@ server <- function(input, output, session) {
         "prediction_results_all_",
         input$results_comparison_approach,
         "_",
-        input$results_comparison_include_clinical
+        input$results_comparison_include_clinical,
+        "_",
+        input$results_comparison_include_tba
       )
       
       # Fetch the object from the environment
@@ -598,14 +710,7 @@ server <- function(input, output, session) {
       vaccines <- names(selected_results)
       
       # gather all predictor-set names that appear anywhere
-      all_sets <- unique(unlist(lapply(selected_results, names)))
-      
-      # Extract numeric part from strings like "day 7"
-      day_sets <- all_sets[grepl("^Day\\s*[0-9]+$", all_sets)]
-      day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
-      
-      # Combine into the desired order
-      all_sets <- c("clinical", paste0("Day ", sort(day_nums)))
+      all_sets <- input$results_comparison_feature_set
       
       # expand grid of all combinations
       grid <- expand.grid(vaccine = vaccines,
@@ -664,7 +769,7 @@ server <- function(input, output, session) {
                   colour = "black",
                   size = 5) +
         scale_fill_gradient(
-          name = "\u03C1",
+          name = expression(rho),
           low = "white",
           high = "#0072B2",
           # blue
@@ -678,7 +783,7 @@ server <- function(input, output, session) {
         coord_fixed(ratio = 1) +   # square tiles
         labs(x = "Predictor set", y = "Vaccine") +
         theme_minimal(base_size = 20) +
-        ggtitle("Spearman \u03C1") +
+        ggtitle(expression(paste("Spearman ", rho))) +
         theme(
           axis.text.x = element_blank(),
           axis.ticks.x = element_blank(),
@@ -733,6 +838,11 @@ server <- function(input, output, session) {
         )
       
       
+      plot_subtitle = paste0(ifelse(input$results_comparison_approach == "sequential", "Sequential", "Cumulative"),
+                             " prediction approach, clinical variables ",
+                             ifelse(input$results_comparison_include_clinical == "withClinical", "included", "not included"))
+      
+      
       # --- Combine with shared legend and common title ---
       combined <- heatmap_plot_R / heatmap_plot_sRMSE +
         plot_layout(
@@ -742,7 +852,7 @@ server <- function(input, output, session) {
         ) +
         plot_annotation(
           title = "Evaluation metrics of CV predictions",
-          subtitle = "Sequential prediction set approach, clinical variables included",
+          subtitle = plot_subtitle,
           theme = theme(
             plot.title = element_text(
               size = 26,
@@ -779,6 +889,8 @@ server <- function(input, output, session) {
         input$results_comparison_approach,
         "_",
         input$results_comparison_include_clinical,
+        "_",
+        input$results_comparison_include_tba,
         ".",
         input$results_comparison_download_format
       )
@@ -809,7 +921,8 @@ server <- function(input, output, session) {
     req(
       input$cv_predictions_vaccine,
       input$cv_predictions_approach,
-      input$cv_predictions_include_clinical
+      input$cv_predictions_include_clinical,
+      input$cv_predictions_include_tba
     )
     
     # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
@@ -824,11 +937,20 @@ server <- function(input, output, session) {
       "withoutClinical"
     }
     
+    include_label_tba <- tolower(input$cv_predictions_include_tba)
+    include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
+      "withTBA"
+    } else {
+      "withoutTBA"
+    }
+    
     # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
     results_name <- paste0("prediction_results_all_",
                            approach_key,
                            "_",
-                           include_suffix)
+                           include_suffix,
+                           "_",
+                           include_suffix_tba)
     
     # Try to fetch the object safely (returns NULL if missing)
     results_obj <- get0(results_name, envir = .GlobalEnv)
@@ -876,14 +998,21 @@ server <- function(input, output, session) {
       # build the object name the same way we do in renderUI
       approach_key <- tolower(gsub("\\s+", "", input$cv_predictions_approach))
       include_label <- tolower(input$cv_predictions_include_clinical)
-      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE))
+      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)){
         "withClinical"
-      else
-        "withoutClinical"
+      } else {"withoutClinical"}
+      include_label_tba <- tolower(input$cv_predictions_include_tba)
+      include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
+        "withTBA"
+      } else {
+        "withoutTBA"
+      }
       results_name <- paste0("prediction_results_all_",
                              approach_key,
                              "_",
-                             include_suffix)
+                             include_suffix,
+                             "_",
+                             include_suffix_tba)
       
       # Safely fetch the results object
       selected_results <- get0(results_name, envir = .GlobalEnv)
@@ -967,6 +1096,8 @@ server <- function(input, output, session) {
              "_",
              input$cv_predictions_include_clinical,
              "_",
+             input$results_comparison_include_tba,
+             "_",
              gsub("[()]", "", gsub(" ", "", input$cv_predictions_vaccine)),
              "_",
              gsub("[()]", "", gsub(" ", "", input$cv_predictions_feature_set)),
@@ -1000,7 +1131,8 @@ server <- function(input, output, session) {
     req(
       input$variable_importance_vaccine,
       input$variable_importance_approach,
-      input$variable_importance_include_clinical
+      input$variable_importance_include_clinical,
+      input$variable_importance_include_tba
     )
     
     # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
@@ -1014,12 +1146,20 @@ server <- function(input, output, session) {
     } else {
       "withoutClinical"
     }
+    include_label_tba <- tolower(input$variable_importance_include_tba)
+    include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
+      "withTBA"
+    } else {
+      "withoutTBA"
+    }
     
     # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
     results_name <- paste0("prediction_results_all_",
                            approach_key,
                            "_",
-                           include_suffix)
+                           include_suffix,
+                           "_",
+                           include_suffix_tba)
     
     # Try to fetch the object safely (returns NULL if missing)
     results_obj <- get0(results_name, envir = .GlobalEnv)
@@ -1070,11 +1210,19 @@ server <- function(input, output, session) {
       include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)){
         "withClinical" } else {
         "withoutClinical"
+        }
+      include_label_tba <- tolower(input$variable_importance_include_tba)
+      include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
+        "withTBA"
+      } else {
+        "withoutTBA"
       }
       results_name <- paste0("prediction_results_all_",
                              approach_key,
                              "_",
-                             include_suffix)
+                             include_suffix,
+                             "_",
+                             include_suffix_tba)
       
       # Safely fetch the results object
       selected_results <- get0(results_name, envir = .GlobalEnv)
@@ -1145,6 +1293,16 @@ server <- function(input, output, session) {
       
       names(pred_cols) = colour_df$feature_group
       
+      plot_title = paste0(
+        "Variable Importance : " ,
+        input$variable_importance_approach,
+        " prediction approach, clinical variables ",
+        ifelse(
+          input$variable_importance_include_clinical == "withClinical",
+          "included",
+          "not included"
+        ))
+      
       # Plot average standardised variable importance
       vi_plot <- plot_df %>%
         ggplot(aes(x = mean_imp, y = feature)) +
@@ -1178,15 +1336,13 @@ server <- function(input, output, session) {
         labs(
           x = "Mean standardised training-set variable importance",
           y = NULL,
-          title = paste0("Mean standardised variable importance (top ", min(input$variable_importance_topN, length(
-            unique(plot_obj$feature)
-          )), " features)"),
-          subtitle = paste0("sRMSE = ", round(metrics$sRMSE, 2), ", \u03C1 = ", round(metrics$Rspearman, 2))
+          title = plot_title,
+          subtitle = bquote(     "sRMSE =" ~ .(sprintf("%.2f", metrics$sRMSE)) * ", " ~ rho == .(sprintf("%.2f", metrics$Rspearman))   )
           ) +
         theme_minimal() +
         theme(
           plot.title = element_text(
-            size = 23,
+            size = 20,
             face = "bold",
             hjust = 0.5
           ),
@@ -1233,6 +1389,8 @@ server <- function(input, output, session) {
              input$variable_importance_approach,
              "_",
              input$variable_importance_include_clinical,
+             "_",
+             input$results_comparison_include_tba,
              "_",
              gsub("[()]", "", gsub(" ", "", input$variable_importance_vaccine)),
              "_",

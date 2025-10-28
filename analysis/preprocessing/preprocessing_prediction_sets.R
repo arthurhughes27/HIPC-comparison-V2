@@ -223,7 +223,7 @@ compute_geneset_fc <- function(df,
 # Now we can calculate geneset-level features for each timepoint of interest
 # The timepoints we consider are vaccine-dependent
 # These timepoints were selected based on the (cumulative) number of samples available for each vaccine
-# The timepoints of interest are c(0, 1, 3, 7, 10, 14, 28)
+# The timepoints of interest are c(0, 1, 3, 7, 10, 14)
 
 # Select a clinical baseline dataframe containing vaccine, age, gender, and race
 d0_clinical = hipc_merged_all_norm_response %>%
@@ -432,7 +432,7 @@ cumulative_merge_per_vaccine <- function(timepoints_of_interest, vaccine) {
 specified_timepoints_list_sequential <- list(
   "Meningococcus (PS)" = c(0, 3, 7),
   "Meningococcus (CJ)" = c(0, 3, 7),
-  "Influenza (IN)" = c(0, 1, 2, 3, 4, 7, 14),
+  "Influenza (IN)" = c(0, 1, 3, 7, 14),
   "Hepatitis A/B (IN/RP)" = c(0, 7),
   "Yellow Fever (LV)" = c(0, 0.17, 3, 7, 10, 14)
 )
@@ -475,3 +475,130 @@ p_save_prediction_sets_list <- fs::path(processed_data_folder, "cumulative_predi
 # Save the data
 saveRDS(cumulative_prediction_sets_list, p_save_prediction_sets_list)
 
+
+# Now we do the same but for predictor sets without NA modules 
+# First find the genesets to remove
+# Load genesets
+BTM_withoutTBA = readRDS(p_load_btm)
+
+idx <- which(BTM_withoutTBA[["geneset.descriptions"]] == "TBA")
+
+BTM_withoutTBA[["genesets"]] <- BTM_withoutTBA[["genesets"]][-idx]
+BTM_withoutTBA[["geneset.descriptions"]] <- BTM_withoutTBA[["geneset.descriptions"]][-idx]
+BTM_withoutTBA[["geneset.names"]] <- BTM_withoutTBA[["geneset.names"]][-idx]
+BTM_withoutTBA[["geneset.aggregates"]] = BTM_withoutTBA[["geneset.aggregates"]][-idx]
+BTM_withoutTBA[["geneset.names.descriptions"]] = BTM_withoutTBA[["geneset.names.descriptions"]][-idx]
+
+# Select a clinical baseline dataframe containing vaccine, age, gender, and race
+d0_clinical = hipc_merged_all_norm_response %>%
+  select(
+    participant_id,
+    immResp_MFC_anyAssay_log2_MFC,
+    vaccine_name,
+    vaccine_colour,
+    age_imputed,
+    gender
+  ) %>%
+  distinct()
+
+d0 = compute_geneset_baseline(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected"
+)
+
+d0.17 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 0.17
+)
+
+d1 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 1
+)
+
+d2 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 2
+)
+
+
+d3 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 3
+)
+
+d7 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 7
+)
+
+d10 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 10
+)
+
+d14 = compute_geneset_fc(
+  df = hipc_merged_all_norm_response,
+  genesets = BTM_withoutTBA[["genesets"]],
+  geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+  id_col = "participant_id",
+  time_col = "study_time_collected",
+  timepoint = 14
+)
+
+# Now apply the sequential merge function to each 
+sequential_prediction_sets_list_withoutTBA <- lapply(names(specified_timepoints_list_sequential), function(vac) {
+  timepoints <- specified_timepoints_list_sequential[[vac]]
+  sequential_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
+})
+
+# Name the top-level list elements with the vaccine names
+names(sequential_prediction_sets_list_withoutTBA) <- names(specified_timepoints_list_cumulative)
+
+# Specify the path to save the list
+p_save_prediction_sets_list_withoutTBA <- fs::path(processed_data_folder, "sequential_prediction_sets_list_withoutTBA.rds")
+
+# Save the data
+saveRDS(sequential_prediction_sets_list_withoutTBA, p_save_prediction_sets_list_withoutTBA)
+
+# Now apply the cumulative merge function to each
+cumulative_prediction_sets_list_withoutTBA <- lapply(names(specified_timepoints_list_cumulative), function(vac) {
+  timepoints <- specified_timepoints_list_cumulative[[vac]]
+  cumulative_merge_per_vaccine(timepoints_of_interest = timepoints, vaccine = vac)
+})
+
+# Name the top-level list elements with the vaccine names
+names(cumulative_prediction_sets_list_withoutTBA) <- names(specified_timepoints_list_cumulative)
+
+# Specify the path to save the list
+p_save_prediction_sets_list_withoutTBA <- fs::path(processed_data_folder, "cumulative_prediction_sets_list_withoutTBA.rds")
+
+# Save the data
+saveRDS(cumulative_prediction_sets_list_withoutTBA, p_save_prediction_sets_list_withoutTBA)
