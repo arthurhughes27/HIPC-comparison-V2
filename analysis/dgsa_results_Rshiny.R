@@ -21,6 +21,7 @@ suppressPackageStartupMessages({
   library(shinyBS)
   library(ggforce)
   library(scales)
+  library(glue)
 })
 
 p_dearseq_dgsa_results_processed = fs::path("output", "results", "dearseq", "dearseq_dgsa_results_processed.rds")
@@ -35,6 +36,79 @@ results_qusage = readRDS(p_qusage_dgsa_results_processed)
 results_df = bind_rows(results_dearseq, results_qusage)
 
 rm(results_dearseq, results_qusage)
+
+# Define some meta options for colours
+
+# 1. define ordering & colours
+condition_order <- c(
+  "Tuberculosis (RVV)",
+  "Varicella Zoster (LV)",
+  "Yellow Fever (LV)",
+  "Ebola (RVV)",
+  "Hepatitis A/B (IN/RP)",
+  "HIV (RVV)",
+  "Influenza (IN)",
+  "Influenza (LV)",
+  "Malaria (RP)",
+  "Meningococcus (CJ)",
+  "Meningococcus (PS)",
+  "Pneumococcus (PS)",
+  "Smallpox (LV)"
+)
+condition_colors <- c(
+  "#b94a73",
+  "#c6aa3c",
+  "#6f71d9",
+  "#64c46a",
+  "#be62c2",
+  "#7d973c",
+  "#563382",
+  "#4ea76e",
+  "#bc69b0",
+  "#33d4d1",
+  "#bb4c41",
+  "#6a87d3",
+  "#b57736"
+)
+names(condition_colors) <- condition_order
+
+aggregate_order <- c(
+  "Antigen Presentation",
+  "Inflammatory/TLR/Chemokines",
+  "Interferon/Antiviral Sensing",
+  "Monocytes",
+  "DC Activation",
+  "Neutrophils",
+  "NK Cells",
+  "Signal Transduction",
+  "ECM And Migration",
+  "Energy Metabolism",
+  "Cell Cycle",
+  "Platelets",
+  "T Cells",
+  "B Cells",
+  "Plasma Cells",
+  "NA"
+)
+aggregate_colors <- c(
+  "#7c5fcd",
+  "#57c39d",
+  "#c1121f",
+  "#55c463",
+  "#7082ca",
+  "#64a332",
+  "#45aecf",
+  "#df9545",
+  "#b7b238",
+  "#a6b36c",
+  "#667328",
+  "#662d2e",
+  "#ff8fa3",
+  "#c05299",
+  "#8f2d56",
+  "#adb5bd"
+)
+names(aggregate_colors) <- aggregate_order
 
 ### DEFINE USER PARAMETERS ###
 
@@ -151,8 +225,12 @@ indiv_sensitivity_parameter_set = c("Differential gene-set analysis method" = "m
                                     "Adjusted p-value threshold" = "p_threshold",
                                     "Absolute log2-fold-change threshold" = "fc_threshold")
 
-indiv_sensitivity_groupby_set = c("By parameter to vary" = "byparameter",
+indiv_sensitivity_groupby_set = c("By parameter to vary" = "byparameter", 
                                   "By vaccine" = "byvaccine")
+
+method_unique_filtration_set = c("No filtration" = "none",
+                                 "Positively regulated only" = "positive",
+                                 "Negatively regulated only" = "negative")
 
 ### DEFINE PAGE LAYOUT ###
 ui <- fluidPage(
@@ -186,7 +264,7 @@ ui <- fluidPage(
     "))
   ),
   
-  titlePanel("Vaccine Differential Gene-set Analysis Comparison Application"),
+  titlePanel("Vaccine Comparison Application"),
   
   tabsetPanel(
     id = "main_tabs",
@@ -502,7 +580,7 @@ ui <- fluidPage(
           # Visualization settings group
           wellPanel(
             style = "background-color: #ffcad4;",
-            h4("Visualization Settings"),
+            h4("Visualisation Settings"),
             
             # Which scores to display in the second ring
             tags$label(
@@ -517,7 +595,7 @@ ui <- fluidPage(
               inputId = "circos_scores",
               label   = NULL,
               choices = scores_set,
-              selected = "activation.score"
+              selected = "fc.score"
             ),
             bsTooltip(
               id      = "circos_scores_info",
@@ -1296,7 +1374,8 @@ ui <- fluidPage(
               inputId = "sensitivity_heatmap_time",
               label   = "Time (days):",
               choices = timepoints_set,
-              selected = 1
+              selected = 1,
+              multiple = FALSE
             ),
             selectInput(
               inputId = "sensitivity_heatmap_aggregates",
@@ -1406,19 +1485,19 @@ ui <- fluidPage(
           )
         )
       )
-    ),
+    ), 
     
     ### END AGGREGATE SENSITIVITY HEATMAP ###
     
-    ### TAB 6 : INDIVIDUAL PARAMETER SENSITIVITY PLOTS ###
+    ### TAB 6 : INDIVIDUAL PARAMETER SENSITIVITY ###
     
     tabPanel(
-      title = "Individual Parameter Sensitivity",
+      title = "Individual Parameter Sensitivity", 
       value = "indiv_sensitivity_tab",
       
       sidebarLayout(
         
-        
+        # ← sidebarPanel now wraps *both* wellPanels
         sidebarPanel(
           width = 3,
           
@@ -1466,7 +1545,7 @@ ui <- fluidPage(
               choices = indiv_sensitivity_parameter_set,
               selected = indiv_sensitivity_parameter_set[1],
               multiple = FALSE
-            ),#jump
+            ),
             conditionalPanel(
               condition = "input.indiv_sensitivity_parameter == 'p_approach'||input.indiv_sensitivity_parameter == 'p_correction'||input.indiv_sensitivity_parameter == 'method'",
               selectInput(
@@ -1604,20 +1683,248 @@ ui <- fluidPage(
           )
         )
       )  # ← close sidebarLayout
-    )  # ← close tabPanel
+    ),  # ← close tabPanel
     
     ### END INDIVIDUAL SENSITIVITY TAB ###
     
     ### TAB 7 : METHOD-SPECIFIC UNIQUE GENESETS ###
     
-    
+    tabPanel(
+      title = "Method-Specific Unique Genesets", 
+      value = "method_unique_tab",
+      
+      sidebarLayout(
+        
+        # ← sidebarPanel now wraps *both* wellPanels
+        sidebarPanel(
+          width = 3,
+          
+          # Action button
+          actionButton(
+            inputId = "method_unique_Update",
+            label   = "Update method-specific genesets plot",
+            class   = "btn-primary",
+            width   = '100%'
+          ),
+          
+          # Data selection group
+          wellPanel(
+            style = "background-color: #c6d2ed;",
+            h4("Data Selection"),
+            selectInput(
+              inputId = "method_unique_conditions",
+              label   = "Conditions:",
+              choices = conditions_set,
+              selected = conditions_set,
+              multiple = TRUE
+            ),
+            selectInput(
+              inputId = "method_unique_time",
+              label   = "Time (days):",
+              choices = timepoints_set,
+              selected = 1,
+              multiple = TRUE
+            ),
+            selectInput(
+              inputId = "method_unique_aggregates",
+              label   = "Aggregates:",
+              choices = aggregates_set,
+              selected = aggregates_set,
+              multiple = TRUE
+            ),
+            selectInput(
+              inputId = "method_unique_reference",
+              label   = "Reference DGSA Method:",
+              choices = methods_set,
+              selected = methods_set[2]
+            ),
+            selectInput(
+              inputId = "method_unique_comparison",
+              label   = "DGSA Method to compare with reference:",
+              choices = methods_set,
+              selected = methods_set[1]
+            ),
+          ), # End wellPanel
+          
+          wellPanel(
+            style = "background-color: #cce3de;",
+            h4("Statistical Significance"),
+            selectInput(
+              inputId = "method_unique_p_approach",
+              label   = "Subset of p-values to correct:",
+              choices = p_approach_set,
+              selected = "withinTime"
+            ),
+            selectInput(
+              inputId = "method_unique_p_correction",
+              label   = "P-value correction method:",
+              choices = p_correction_set,
+              selected = "BH"
+            ),
+            numericInput(
+              inputId = "method_unique_p_threshold",
+              label   = "Adjusted p-value threshold:",
+              value   = 0.05,
+              min     = 0,
+              max     = 1,
+              step    = 0.01
+            ),
+            numericInput(
+              inputId = "method_unique_fc_threshold",
+              label   = "Absolute log2‑fold‑change threshold:",
+              value   = 0,
+              min     = 0,
+              max     = 3,
+              step    = 0.1
+            ),
+          ), # End wellPanel
+          
+          wellPanel(
+            style = "background-color: #ffcad4;",
+            h4("Visualisation Settings"),
+            selectInput(
+              inputId = "method_unique_filtration",
+              label   = "Filter results for visualisation?",
+              choices = method_unique_filtration_set,
+              selected = "none"
+            ),
+          ), # End wellPanel
+          
+          # Download section
+          wellPanel(
+            style = "background-color: #ced4da;",
+            h4("Download Options"),
+            # choose format
+            selectInput(
+              inputId = "method_unique_download_format",
+              label   = "Format of download:",
+              choices = c("PDF" = "pdf", "PNG" = "png", "JPEG" = "jpeg"),
+              selected = "pdf"
+            ),
+            
+            # size controls (in inches)
+            numericInput(
+              inputId = "method_unique_download_width",
+              label   = "Width of download (inches):",
+              value   = 20,
+              min     = 1
+            ),
+            numericInput(
+              inputId = "method_unique_download_height",
+              label   = "Height of download (inches):",
+              value   = 10,
+              min     = 1
+            ),
+            
+            numericInput(
+              inputId = "method_unique_download_dpi",
+              label   = "Resolution (DPI):",
+              value   = 300,
+              min     = 72
+            ),
+            
+            ## Download plot button
+            div(
+              style = "width: 100%;",
+              downloadButton(
+                outputId = "download_method_unique",
+                label    = "Download Plot",
+                class    = "btn-success"
+              )
+            )
+          )
+        ), # End sidebarPanel
+        
+        mainPanel(
+          width = 9,
+          div(
+            style = "text-align: center;",
+            plotOutput(
+              outputId = "methodUniquePlot",
+              height = "1000px",
+              width  = "160%"
+            )
+          )
+        )
+        
+      ) # End sidebarLayout
+      
+    ) # End tabPanel
     
     ### END METHOD-SPECIFIC UNIQUE GENESETS ###
     
   ) # Close tabsetPanel
 ) # Close fluidPage
 
-# SERVER COMMAND #
+# Example parameters for debugging
+input = list()
+
+# Heatmap tab
+input$heatmap_method = "dearseq"
+input$heatmap_conditions = conditions_set
+input$heatmap_times = timepoints_set
+input$heatmap_aggregates = aggregates_set
+input$heatmap_p_correction = "BH"
+input$heatmap_p_approach = "global"
+input$heatmap_p_threshold = 0.05
+input$heatmap_filter_variable = "none"
+input$heatmap_quantile_threshold = 0
+input$heatmap_scores = "fc.score"
+input$heatmap_y_order = "aggregate"
+input$heatmap_x_order = "cluster-time"
+input$heatmap_filter_commonDE = "score"
+input$heatmap_common_percentage = 0
+input$heatmap_score_threshold = 8
+input$heatmap_quantile_scoreclip = 0.995
+
+# Spider plot tab
+input$spider_method = unique(results_df$method)[1]
+input$spider_grouping = "withinTime"
+input$spider_conditions_withinTime = conditions_set
+input$spider_times_withinTime = timepoints_set[1]
+input$spider_conditions_withinCondition = conditions_set[1]
+input$spider_conditions_withinCondition = conditions_set[1]
+input$spider_aggregates = aggregates_set
+input$spider_scores = "fc.score"
+input$spider_quantile_scoreclip = 0.95
+input$spider_grid = spider_grid_set[2]
+
+# Sensitivity heatmap tab
+input$sensitivity_heatmap_method = unique(results_df$method)
+input$sensitivity_heatmap_conditions = conditions_set
+input$sensitivity_heatmap_time = timepoints_set[4]
+input$sensitivity_heatmap_aggregates = aggregates_set
+input$sensitivity_heatmap_p_approach =p_approach_set
+input$sensitivity_heatmap_p_method = sensitivity_heatmap_p_correction_set
+input$sensitivity_heatmap_p_threshold =  c(0.0001, 0.001, 0.01, 0.05, 0.1)
+input$sensitivity_heatmap_fc_threshold = seq(0,1,0.2)
+input$sensitivity_heatmap_order = "set"
+
+# Individual parameter sensitivity tab
+input$indiv_sensitivity_conditions = conditions_set
+input$indiv_sensitivity_time = 1
+input$indiv_sensitivity_aggregates = aggregates_set
+input$indiv_sensitivity_parameter = "method"
+input$indiv_sensitivity_method = "dearseq"
+input$indiv_sensitivity_p_correction = "BH"
+input$indiv_sensitivity_p_approach = "withinTime"
+input$indiv_sensitivity_p_threshold = 0.05
+input$indiv_sensitivity_fc_threshold = 0
+input$indiv_sensitivity_p_threshold_range = c(1e-05, 1e-04, 1e-03, 1e-02, 5e-02, 1e-01)
+input$indiv_sensitivity_fc_threshold_range = fc_thresholds_set
+input$indiv_sensitivity_groupby = "byvaccine"
+
+# Unique per-method genesets tab
+input$method_unique_conditions = conditions_set
+input$method_unique_time = c(1,3)
+input$method_unique_aggregates = aggregates_set
+input$method_unique_p_correction = "BH"
+input$method_unique_p_approach = "withinTime"
+input$method_unique_p_threshold = 0.05
+input$method_unique_fc_threshold = 0
+input$method_unique_reference = "qusage"
+input$method_unique_comparison = "dearseq"
+input$method_unique_filtration = "positive"
 
 server <- function(input, output, session) {
   
@@ -1765,7 +2072,7 @@ server <- function(input, output, session) {
                                      global_order)
       
       # Define colours for each aggregate
-      aggregate_colours <- results_df %>%
+      aggregate_colors <- results_df %>%
         select(gs.aggregate, gs.colour) %>%
         distinct() %>%
         { setNames(.$gs.colour, .$gs.aggregate) }
@@ -1782,7 +2089,7 @@ server <- function(input, output, session) {
         prop         = as.vector(pt),
         stringsAsFactors = FALSE
       )
-      aggregate_proportions$colour = aggregate_colours[aggregate_proportions$gs.aggregate]
+      aggregate_proportions$colour = aggregate_colors[aggregate_proportions$gs.aggregate]
       
       # Compute cumulative proportions for each aggregate
       aggregate_proportions$cum_start <- c(0, head(cumsum(aggregate_proportions$prop), -1))
@@ -2230,7 +2537,7 @@ server <- function(input, output, session) {
           shared_links$gs.aggregate <- as.character(shared_links$gs.aggregate)
           
           # now name-based lookup “just works”
-          shared_links$link_colour <- aggregate_colours[ shared_links$gs.aggregate ]
+          shared_links$link_colour <- aggregate_colors[ shared_links$gs.aggregate ]
           
           
           # Use mapply to vectorize the drawing of links
@@ -2251,34 +2558,88 @@ server <- function(input, output, session) {
       }) # End suppressMessages
       
       # PLOT LEGENDS
-      legend_labels <- c(
-        expression(bold("Gene Set Aggregate")), input$circos_aggregates,
-        expression(bold("Direction of Regulation")), "Upregulated", "Downregulated",
-        expression(bold("Correlation with Ab Response")), "Positive", "Negative"
-      )
-      
-      legend_colours <- c(
-        NA, aggregate_colours[input$circos_aggregates],  # Gene Set Aggregate
-        NA, "red", "blue",     # Gene Set Activity
-        NA, "purple", "orange" # Correlation with MFC
-      )
-      
-      # Plot the combined legend with optimized spacing and manually larger titles
-      legend("right",
-             legend = legend_labels,
-             fill = legend_colours,
-             border = "white",
-             cex = c(1.5, rep(1.2, length(input$circos_aggregates)),  # Gene Set Aggregate
-                     1.5, 1.2, 1.2,  # Gene Set Activity
-                     1.5, 1.2, 1.2), # Correlation with MFC
-             text.width = 1.2 * max(strwidth(legend_labels, cex = 1.5)),  # Ensures alignment
-             y.intersp = c(1, rep(0.8, length(input$circos_aggregates)),  # Gene Set Aggregate
-                           1.5, 0.8, 0.8,  # Gene Set Activity
-                           1.5, 0.8, 0.8), # Correlation with MFC
-             inset = c(0, 0.01),
-             ncol = 1, bty = "o", xjust = 0,
-             text.col = rep("black", length(legend_labels)),
-             title = NULL)  # Disable default title
+      if(input$circos_ring == "all"){
+        legend_labels <- c(
+          expression(bold("Gene Set Aggregate")), input$circos_aggregates,
+          expression(bold("Direction of Regulation")), "Upregulated", "Downregulated",
+          expression(bold("Correlation with Ab Response")), "Positive", "Negative"
+        )
+        
+        legend_colours <- c(
+          NA, aggregate_colors[input$circos_aggregates],  # Gene Set Aggregate
+          NA, "red", "blue",     # Gene Set Activity
+          NA, "purple", "orange" # Correlation with MFC
+        )
+        
+        # Plot the combined legend with optimized spacing and manually larger titles
+        legend("right",
+               legend = legend_labels,
+               fill = legend_colours,
+               border = "white",
+               cex = c(1.5, rep(1.2, length(input$circos_aggregates)),  # Gene Set Aggregate
+                       1.5, 1.2, 1.2,  # Gene Set Activity
+                       1.5, 1.2, 1.2), # Correlation with MFC
+               text.width = 1.2 * max(strwidth(legend_labels, cex = 1.5)),  # Ensures alignment
+               y.intersp = c(1, rep(0.8, length(input$circos_aggregates)),  # Gene Set Aggregate
+                             1.5, 0.8, 0.8,  # Gene Set Activity
+                             1.5, 0.8, 0.8), # Correlation with MFC
+               inset = c(0, 0.01),
+               ncol = 1, bty = "o", xjust = 0,
+               text.col = rep("black", length(legend_labels)),
+               title = NULL)  # Disable default title
+      } else if (input$circos_ring == "expression"){
+        
+        legend_labels <- c(
+          expression(bold("Gene Set Aggregate")), input$circos_aggregates,
+          expression(bold("Direction of Regulation")), "Upregulated", "Downregulated"
+        )
+        
+        legend_colours <- c(
+          NA, aggregate_colors[input$circos_aggregates],  # Gene Set Aggregate
+          NA, "red", "blue"     # Gene Set Activity
+        )
+        
+        # Plot the combined legend with optimized spacing and manually larger titles
+        legend("right",
+               legend = legend_labels,
+               fill = legend_colours,
+               border = "white",
+               cex = c(1.5, rep(1.2, length(input$circos_aggregates)),  # Gene Set Aggregate
+                       1.5, 1.2, 1.2), # Correlation with MFC
+               text.width = 1.2 * max(strwidth(legend_labels, cex = 1.5)),  # Ensures alignment
+               y.intersp = c(1, rep(0.8, length(input$circos_aggregates)),  # Gene Set Aggregate
+                             1.5, 0.8, 0.8), # Correlation with MFC
+               inset = c(0, 0.01),
+               ncol = 1, bty = "o", xjust = 0,
+               text.col = rep("black", length(legend_labels)),
+               title = NULL)  # Disable default title
+        
+        
+      } else if (input$circos_ring == "none"){
+        
+        
+        legend_labels <- c(
+          expression(bold("Gene Set Aggregate")), input$circos_aggregates
+        )
+        
+        legend_colours <- c(
+          NA, aggregate_colors[input$circos_aggregates]
+        )
+        
+        # Plot the combined legend with optimized spacing and manually larger titles
+        legend("right",
+               legend = legend_labels,
+               fill = legend_colours,
+               border = "white",
+               cex = c(1.5, rep(1.2, length(input$circos_aggregates))), # Correlation with MFC
+               text.width = 1.2 * max(strwidth(legend_labels, cex = 1.5)),  # Ensures alignment
+               y.intersp = c(1, rep(0.8, length(input$circos_aggregates))), # Correlation with MFC
+               inset = c(0, 0.01),
+               ncol = 1, bty = "o", xjust = 0,
+               text.col = rep("black", length(legend_labels)),
+               title = NULL)  # Disable default title
+        
+      }
       
       # **Record** the finished plot
       lastCircos(recordPlot())
@@ -2620,7 +2981,7 @@ server <- function(input, output, session) {
       # make caption for footnote showing parameter values
       if (input$heatmap_filter_commonDE != "none"){
         filtration_string = if (input$heatmap_filter_commonDE == "score"){
-          paste0("sharing score above ", input$heatmap_score_threshold)
+          paste0("sharing score above ", input$heatmap_score_threshold) 
         } else if (input$heatmap_filter_commonDE == "global"){
           paste0("across selected times common DE above ", 100*input$heatmap_common_percentage, "%")
         } else if (input$heatmap_filter_commonDE == "withinTime"){
@@ -2637,7 +2998,7 @@ server <- function(input, output, session) {
                            "- significance level: ",           input$heatmap_p_threshold,     "\n",
                            "- filtration on ", input$heatmap_filter_variable,      "     ",
                            " at quantile threshold ", input$heatmap_quantile_threshold, "\n",
-                           "genesets displayed based on : ", filtration_string)
+                           "genesets displayed based on : ", filtration_string) 
         } else if (input$heatmap_filter_variable == "none"){
           
           caption = paste0("Parameters:\n",
@@ -2659,11 +3020,11 @@ server <- function(input, output, session) {
                            "- p value subset: ",              input$heatmap_p_approach,     "     ",
                            "- significance level: ",           input$heatmap_p_threshold,     "\n",
                            "- filtration on ", input$heatmap_filter_variable,      "     ",
-                           " at quantile threshold ", input$heatmap_quantile_threshold, "\n")
+                           " at quantile threshold ", input$heatmap_quantile_threshold, "\n") 
         } else if (input$heatmap_filter_variable == "none"){
           
           caption = paste0("Parameters:\n",
-                           "DGSA method : ", input$heatmap_method,"\n",
+                           "DGSA method : ", input$heatmap_method,"\n", 
                            "- p value correction: ", input$heatmap_p_correction, "     ",
                            "- p value subset: ",              input$heatmap_p_approach,     "     ",
                            "- significance level: ",           input$heatmap_p_threshold,     "\n")
@@ -2893,7 +3254,7 @@ server <- function(input, output, session) {
         )
       
       # --- 6. Aggregate stripe data ---
-      aggregate_colours <- results_df %>%
+      aggregate_colors <- results_df %>%
         select(gs.aggregate, gs.colour) %>%
         distinct() %>%
         { setNames(.$gs.colour, .$gs.aggregate) }
@@ -2905,7 +3266,7 @@ server <- function(input, output, session) {
         count(gs.aggregate) %>%
         mutate(
           prop      = n / sum(n),            # now sum(n) is only non‐NA counts
-          colour    = aggregate_colours[gs.aggregate]
+          colour    = aggregate_colors[gs.aggregate]
         ) %>%
         arrange(gs.aggregate) %>%
         mutate(
@@ -2979,7 +3340,7 @@ server <- function(input, output, session) {
           ) +
           scale_fill_manual(
             name   = "Gene Set\nAggregate",
-            values = aggregate_colours,
+            values = aggregate_colors,
             guide  = guide_legend(ncol = 1)
           )
       } else if (input$exprprofiles_barcolours == "Aggregates"){
@@ -2988,7 +3349,7 @@ server <- function(input, output, session) {
           geom_hline(yintercept = 0, color = "black") +
           scale_fill_manual(
             name          = "Gene Set\nAggregate",
-            values        = aggregate_colours,
+            values        = aggregate_colors,
             na.translate  = FALSE            # ← drop the NA entry from the legend
           ) +
           ggh4x::facet_grid2(
@@ -3078,12 +3439,12 @@ server <- function(input, output, session) {
       
       # Apply transformation and preserve factor level order
       results_df_spider <- results_df %>%
-        filter(method == input$spider_method)
-      mutate(
-        gs.aggregate.short = as.character(gs.aggregate),
-        gs.aggregate.short = new_levels[gs.aggregate.short],
-        gs.aggregate.short = factor(gs.aggregate.short, levels = unique(new_levels))
-      )
+        filter(method == input$spider_method) %>%
+        mutate(
+          gs.aggregate.short = as.character(gs.aggregate),
+          gs.aggregate.short = new_levels[gs.aggregate.short],
+          gs.aggregate.short = factor(gs.aggregate.short, levels = unique(new_levels))
+        )
       
       # Initialise a list to store spider plots
       radar_plots <- list()
@@ -3623,22 +3984,26 @@ server <- function(input, output, session) {
         summarize(all_na = all(is.na(prop.DE)), .groups = "drop") %>%
         filter(all_na) %>%
         pull(condition)
-      label_map <- setNames(
-        lapply(levels(heatmap_df$condition), function(lvl) {
-          if (lvl %in% na_conditions) {
-            sprintf("<span style='color:#ced4da;'>%s</span>", lvl)
-          } else lvl
-        }),
-        levels(heatmap_df$condition)
-      )
+      label_map <- setNames(vapply(levels(heatmap_df$condition), function(lvl) {
+        if (lvl %in% na_conditions) {
+          # sprintf('<span style="color:#ced4da">%s</span>', lvl)
+          lvl
+        } else {
+          lvl
+        }
+      }, FUN.VALUE = character(1)),
+      levels(heatmap_df$condition))
+      
       
       # Plot
       ggplot(heatmap_df, aes(x = spec_id, y = condition, fill = prop.DE)) +
         geom_tile() +
+        scale_y_discrete(labels = label_map) +
         scale_fill_gradient(
           low      = "white",
           high     = "#70e000",
           na.value = "white",
+          limits   = c(0, 1),
           name     = str_wrap("Proportion of DE genesets within aggregate", 20),
           guide    = guide_colorbar(
             title.position = "top",
@@ -3649,7 +4014,6 @@ server <- function(input, output, session) {
             barheight      = unit(10, "lines")
           )
         ) +
-        scale_y_discrete(labels = label_map) +
         labs(
           x     = "Specifications (ranked by mean common differential expression)",
           y     = "conditions",
@@ -3671,9 +4035,9 @@ server <- function(input, output, session) {
         theme(
           plot.title   = element_text(hjust = 0.5, size = 28, face = "bold"),
           axis.title   = element_text(size = 30),
-          axis.text.y  = element_markdown(size = 10),
           strip.text.x = element_text(size = 12, face = "bold", color = "black"),
-          axis.text.x  = element_blank()
+          axis.text.x  = element_blank(),
+          axis.text.y = ggtext::element_markdown(size = 10),
         )
     }) # End Isolate
     
@@ -3707,14 +4071,14 @@ server <- function(input, output, session) {
     }
   )
   
-  ### BEGIN INDIVIDUAL PARAMETER SENSITIVITY PLOT TAB ###
+  ### BEGIN INDIVIDUAL PARAMETER SENSITIVITY PLOT TAB ### 
   indiv_sensitivity_plot <- reactive({
     
     input$indiv_sensitivity_Update
     isolate({
       
       # First create a new data table with the data of interest
-      DT <- as.data.table(results_df) %>%
+      DT <- as.data.table(results_df) %>% 
         filter(time == input$indiv_sensitivity_time,
                condition %in% input$indiv_sensitivity_conditions,
                gs.aggregate %in% input$indiv_sensitivity_aggregates,
@@ -3729,28 +4093,28 @@ server <- function(input, output, session) {
           values_to = "adj_pval"                     # the cell value
         )
       
-      # Now, according to the fixed parameter values, we can calculate the percentage of DE genesets under each of the varying specifications.
+      # Now, according to the fixed parameter values, we can calculate the percentage of DE genesets under each of the varying specifications. 
       if (input$indiv_sensitivity_parameter == "method"){
         
-        dt_long_filtered = dt_long %>%
+        dt_long_filtered = dt_long %>% 
           filter(approach == input$indiv_sensitivity_p_approach,
-                 p_method == input$indiv_sensitivity_p_correction) %>%
+                 p_method == input$indiv_sensitivity_p_correction) %>% 
           mutate(significant = (adj_pval <= input$indiv_sensitivity_p_threshold &
-                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold))
+                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold)) 
         
         df_prop_de <- dt_long_filtered %>%
-          group_by(condition, method, condition.colour) %>%
+          group_by(condition, method, condition.colour) %>% 
           summarise(
             prop_signif = mean(significant),
             .groups = "drop"
-          ) %>%
+          ) %>% 
           # reorder 'condition' by its mean prop_signif (across methods)
           mutate(
             condition = fct_reorder(condition, prop_signif, .fun = mean)
           )
         
         if (input$indiv_sensitivity_groupby == "byparameter"){
-          plot <- df_prop_de %>%
+          plot <- df_prop_de %>% 
             ggplot(aes(x = method, y = prop_signif, fill = condition)) +
             
             scale_fill_manual(
@@ -3854,25 +4218,25 @@ server <- function(input, output, session) {
         
       } else if (input$indiv_sensitivity_parameter == "p_correction"){
         
-        dt_long_filtered = dt_long %>%
+        dt_long_filtered = dt_long %>% 
           filter(approach == input$indiv_sensitivity_p_approach,
-                 method == input$indiv_sensitivity_method) %>%
+                 method == input$indiv_sensitivity_method) %>% 
           mutate(significant = (adj_pval <= input$indiv_sensitivity_p_threshold &
-                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold))
+                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold)) 
         
         df_prop_de <- dt_long_filtered %>%
-          group_by(condition, p_method, condition.colour) %>%
+          group_by(condition, p_method, condition.colour) %>% 
           summarise(
             prop_signif = mean(significant),
             .groups = "drop"
-          ) %>%
+          ) %>% 
           # reorder 'condition' by its mean prop_signif (across methods)
           mutate(
             condition = fct_reorder(condition, prop_signif, .fun = mean)
           )
         
         if (input$indiv_sensitivity_groupby == "byparameter"){
-          plot <- df_prop_de %>%
+          plot <- df_prop_de %>% 
             ggplot(aes(x = p_method, y = prop_signif, fill = condition)) +
             
             # use the hex‐codes in condition.colour, in the same order as levels(condition)
@@ -3913,7 +4277,7 @@ server <- function(input, output, session) {
                 hjust      = 0,
                 lineheight = 1.2,
                 margin     = margin(t = 15, r = 0, b = 0, l = 0)
-              ),
+              ),  
               plot.caption.position = "plot"
             ) +
             ylim(0, 1)
@@ -3974,25 +4338,25 @@ server <- function(input, output, session) {
         
       } else if (input$indiv_sensitivity_parameter == "p_approach"){
         
-        dt_long_filtered = dt_long %>%
+        dt_long_filtered = dt_long %>% 
           filter(p_method == input$indiv_sensitivity_p_correction,
-                 method == input$indiv_sensitivity_method) %>%
+                 method == input$indiv_sensitivity_method) %>% 
           mutate(significant = (adj_pval <= input$indiv_sensitivity_p_threshold &
-                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold))
+                                  abs(fc.score) >= input$indiv_sensitivity_fc_threshold)) 
         
         df_prop_de <- dt_long_filtered %>%
-          group_by(condition, approach, condition.colour) %>%
+          group_by(condition, approach, condition.colour) %>% 
           summarise(
             prop_signif = mean(significant),
             .groups = "drop"
-          ) %>%
+          ) %>% 
           # reorder 'condition' by its mean prop_signif (across methods)
           mutate(
             condition = fct_reorder(condition, prop_signif, .fun = mean)
           )
         
         if (input$indiv_sensitivity_groupby == "byparameter"){
-          plot <- df_prop_de %>%
+          plot <- df_prop_de %>% 
             ggplot(aes(x = approach, y = prop_signif, fill = condition)) +
             
             # use the hex‐codes in condition.colour, in the same order as levels(condition)
@@ -4033,7 +4397,7 @@ server <- function(input, output, session) {
                 hjust      = 0,
                 lineheight = 1.2,
                 margin     = margin(t = 15, r = 0, b = 0, l = 0)
-              ),
+              ),  
               plot.caption.position = "plot"
             ) +
             ylim(0, 1)
@@ -4094,10 +4458,10 @@ server <- function(input, output, session) {
         
       } else if (input$indiv_sensitivity_parameter == "p_threshold"){
         
-        dt_long_filtered = dt_long %>%
+        dt_long_filtered = dt_long %>% 
           filter(p_method == input$indiv_sensitivity_p_correction,
                  method == input$indiv_sensitivity_method,
-                 approach == input$indiv_sensitivity_p_approach)
+                 approach == input$indiv_sensitivity_p_approach) 
         
         dt_long_filtered <- bind_cols(
           dt_long_filtered,
@@ -4129,7 +4493,7 @@ server <- function(input, output, session) {
           summarise(
             prop_signif = mean(significant),
             .groups     = "drop"
-          ) %>%
+          ) %>% 
           mutate(condition = fct_reorder(condition, prop_signif, .fun = mean))
         
         custom_pct <- function(x) {
@@ -4147,10 +4511,10 @@ server <- function(input, output, session) {
           }, FUN.VALUE = character(1))
         }
         
-        plot <- df_prop_de %>%
-          ggplot(aes(x = threshold,
-                     y = prop_signif,
-                     colour = condition,
+        plot <- df_prop_de %>% 
+          ggplot(aes(x = threshold, 
+                     y = prop_signif, 
+                     colour = condition, 
                      group = condition)) +
           scale_color_manual(
             name   = "Vaccine",
@@ -4194,17 +4558,17 @@ server <- function(input, output, session) {
               hjust      = 0,
               lineheight = 1.2,
               margin     = margin(t = 15, r = 0, b = 0, l = 0)
-            ),
+            ),  
             plot.caption.position = "plot"
           ) +
           ylim(0, 1)
         
       } else if (input$indiv_sensitivity_parameter == "fc_threshold"){
         
-        dt_long_filtered = dt_long %>%
+        dt_long_filtered = dt_long %>% 
           filter(p_method == input$indiv_sensitivity_p_correction,
                  method == input$indiv_sensitivity_method,
-                 approach == input$indiv_sensitivity_p_approach)
+                 approach == input$indiv_sensitivity_p_approach) 
         
         dt_long_filtered <- bind_cols(
           dt_long_filtered,
@@ -4238,7 +4602,7 @@ server <- function(input, output, session) {
             .groups     = "drop"
           )
         
-        plot <- df_prop_de %>%
+        plot <- df_prop_de %>% 
           ggplot(aes(x = threshold, y = prop_signif, colour = condition, group = condition)) +
           
           scale_color_manual(
@@ -4280,7 +4644,7 @@ server <- function(input, output, session) {
               hjust      = 0,
               lineheight = 1.2,
               margin     = margin(t = 15, r = 0, b = 0, l = 0)
-            ),
+            ),  
             plot.caption.position = "plot"
           ) +
           
@@ -4301,8 +4665,8 @@ server <- function(input, output, session) {
   output$download_indiv_sensitivity <- downloadHandler(
     filename = function() {
       req(input$indiv_sensitivity_download_format)
-      paste0("indiv_sensitivity_",
-             input$indiv_sensitivity_parameter,
+      paste0("indiv_sensitivity_", 
+             input$indiv_sensitivity_parameter, 
              "_day",
              input$indiv_sensitivity_time,
              ".",
@@ -4335,99 +4699,111 @@ server <- function(input, output, session) {
     input$method_unique_Update
     isolate({
       
-      # 1. Compute the dynamic p-value column name
+      results_df <- results_df %>%
+        mutate(time = factor(time, levels = sort(unique(time))))
+      
+      # 1. build your “significant” table across all selected times
+      #    (note we now keep time in the data, and allow length(input$...time) ≥ 1)
       pval_col <- paste0(
-        input$method_unique_p_approach,
-        ".adjPval_",
+        input$method_unique_p_approach, 
+        ".adjPval_", 
         input$method_unique_p_correction
       )
       
-      # 2. Filter & flag significant rows
       sig_df <- results_df %>%
         filter(
-          condition  %in% input$method_unique_conditions,
-          time       == input$method_unique_time,
-          gs.aggregate %in% input$method_unique_aggregates,
+          condition     %in% input$method_unique_conditions,
+          time          %in% input$method_unique_time,
+          gs.aggregate  %in% input$method_unique_aggregates
         ) %>%
         mutate(
           significant = (.data[[pval_col]] <= input$method_unique_p_threshold) &
-            (abs(fc.score)     >= input$method_unique_fc_threshold)
+            (abs(fc.score)    >= input$method_unique_fc_threshold)
         ) %>%
         filter(significant) %>%
-        select(condition, method, gs.name, gs.aggregate, gs.colour, fc.score)
+        select(time, condition, method, gs.name, gs.aggregate, gs.colour, fc.score)
       
-      if(input$method_unique_filtration == "positive"){
-        sig_df = sig_df %>%
-          filter(fc.score > 0)
-      } else if (input$method_unique_filtration == "negative"){
-        sig_df = sig_df %>%
-          filter(fc.score < 0)
+      # 1b. optional positive/negative filtration
+      if (input$method_unique_filtration == "positive") {
+        sig_df <- filter(sig_df, fc.score > 0)
+      } else if (input$method_unique_filtration == "negative") {
+        sig_df <- filter(sig_df, fc.score < 0)
       }
       
-      # 3. Build per‐vaccine DE‐sets for reference & comparison
+      # 2. build ref- & cmp‐lists *by* time & condition
       ref_sets <- sig_df %>%
         filter(method == input$method_unique_reference) %>%
-        group_by(condition) %>%
+        group_by(time, condition) %>%
         summarise(ref_list = list(gs.name), .groups = "drop")
       
       cmp_sets <- sig_df %>%
         filter(method == input$method_unique_comparison) %>%
-        group_by(condition) %>%
+        group_by(time, condition) %>%
         summarise(cmp_list = list(gs.name), .groups = "drop")
       
-      # 4. Compute unique genesets: cmp minus ref
-      unique_df <- inner_join(cmp_sets, ref_sets, by = "condition") %>%
+      # 3. compute unique sets (cmp − ref), keeping time
+      unique_df <- inner_join(cmp_sets, ref_sets, by = c("time","condition")) %>%
         mutate(unique = map2(cmp_list, ref_list, setdiff)) %>%
-        select(condition, unique) %>%
+        select(time, condition, unique) %>%
         unnest(unique) %>%
         rename(gs.name = unique)
       
-      # 5. Attach aggregate & colour, then count & proportion
+      # 4. attach aggregate & colour; count & proportion *by* time & condition
       plot_df <- unique_df %>%
         left_join(
           sig_df %>% distinct(gs.name, gs.aggregate, gs.colour),
           by = "gs.name"
         ) %>%
-        group_by(condition, gs.aggregate, gs.colour) %>%
+        group_by(time, condition, gs.aggregate, gs.colour) %>%
         summarise(count = n(), .groups = "drop") %>%
-        group_by(condition) %>%
+        group_by(time, condition) %>%
         mutate(prop = count / sum(count)) %>%
         ungroup()
       
-      # 6. Horizontal stacked bar chart
+      # 5. plot: horizontal bars, faceted by time. 
+      #    free_y so each facet only shows its own vaccines; x‐scale fixed across facets
       ggplot(plot_df, aes(
         x    = count,
-        y    = fct_reorder(condition, count, .fun = sum),
+        y    = fct_reorder(condition, count, .fun = sum), 
         fill = gs.aggregate
       )) +
         geom_col(position = "stack") +
+        facet_wrap(
+          ~ time, 
+          ncol         = 1, 
+          scales       = "free_y", 
+          strip.position = "top",
+          labeller     = labeller(time = function(x) paste0("Day ", x))
+        ) +
         scale_fill_manual(
           name   = "Gene Set Aggregate",
-          values = set_names(plot_df$gs.colour, plot_df$gs.aggregate)
+          values = aggregate_colors     # assumes that named vector is in your environment
         ) +
         labs(
-          title   = glue(
-            "Unique Genesets: {input$method_unique_comparison} vs. {input$method_unique_reference}\n",
-            "(Day {input$method_unique_time})"
+          title    = glue(
+            "Unique Genesets: {input$method_unique_comparison} vs. {input$method_unique_reference}"
           ),
-          x       = "Number of uniquely identified genesets",
-          y       = "Vaccine",
-          caption = paste0(
+          subtitle = glue("Day(s): {paste0(input$method_unique_time, collapse = ', ')}"),
+          x        = "Number of uniquely identified genesets",
+          y        = NULL,
+          caption  = paste0(
             "Fixed specs:\n",
-            "- p value subset: ",     input$method_unique_p_approach,     "    ",
-            "- p value correction: ",  input$method_unique_p_correction,       "\n",
-            "- significance level: ",   input$method_unique_p_threshold,    "    ",
+            "- p value subset: ",    input$method_unique_p_approach,    "    ",
+            "- p value correction: ", input$method_unique_p_correction, "\n",
+            "- significance level: ", input$method_unique_p_threshold,   "    ",
             "- abs log2 FC threshold: ", input$method_unique_fc_threshold
           )
         ) +
         theme_minimal(base_size = 20) +
         theme(
-          axis.text.y = element_text(size = 20),
-          axis.title  = element_text(face = "bold", size = 30),
-          legend.title  = element_text(face = "bold", size = 25),
-          legend.text   = element_text(size = 16),
-          plot.title    = element_text(face = "bold", size = 35, hjust = 0.5),
-          plot.caption  = element_text(size = 12, hjust = 0)
+          strip.text      = element_text(face = "bold", size = 24),
+          axis.text.y     = element_text(size = 18),
+          axis.title.x    = element_text(face = "bold", size = 20),
+          legend.title    = element_text(face = "bold", size = 20),
+          legend.text     = element_text(size = 16),
+          plot.title      = element_text(face = "bold", size = 30, hjust = 0.5),
+          plot.subtitle   = element_text(size = 22, hjust = 0.5),
+          plot.caption    = element_text(size = 12, hjust = 0)
         )
       
     }) # End isolate
@@ -4442,7 +4818,7 @@ server <- function(input, output, session) {
   output$download_method_unique <- downloadHandler(
     filename = function() {
       req(input$method_unique_download_format)
-      paste0("method_unique_genesets_day",
+      paste0("method_unique_genesets_day", 
              input$method_unique_time,
              ".",
              input$method_unique_download_format)
