@@ -4,8 +4,7 @@
 ## We will explore both individual trajectories as well as the distribution of the maximum fold-changes
 
 # Packages
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 
 # Directory to store engineered data
 processed_data_folder = "data"

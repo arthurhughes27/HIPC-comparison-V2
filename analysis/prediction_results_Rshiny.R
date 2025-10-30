@@ -5,63 +5,81 @@ suppressPackageStartupMessages({
   library(shiny)
   library(shinyBS)
   library(patchwork)
+  library(grid)
+  library(gridExtra)
 })
 
 # Load in all the possible results that shiny may need access to
 
 # Cumulative approach, with clinical variables, with TBA
-p_prediction_results_all_cumulative_withClinical_withTBA = fs::path("output",
-                                                            "results",
-                                                            "prediction_results_all_cumulative_withClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_cumulative_withClinical_withTBA.rds"
+)
 
 prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withTBA)
 
 # Cumulative approach, without clinical variables, with TBA
-p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path("output",
-                                                               "results",
-                                                               "prediction_results_all_cumulative_withoutClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
+)
 
 prediction_results_all_cumulative_withoutClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withTBA)
 
 # Sequential approach, with clinical variables, with TBA
-p_prediction_results_all_sequential_withClinical_withTBA = fs::path("output",
-                                                            "results",
-                                                            "prediction_results_all_sequential_withClinical_withTBA.rds")
+p_prediction_results_all_sequential_withClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_sequential_withClinical_withTBA.rds"
+)
 
 prediction_results_all_sequential_withClinical_withTBA = readRDS(p_prediction_results_all_sequential_withClinical_withTBA)
 
 # Sequential approach, without clinical variables, with TBA
-p_prediction_results_all_sequential_withoutClinical_withTBA = fs::path("output",
-                                                               "results",
-                                                               "prediction_results_all_sequential_withoutClinical_withTBA.rds")
+p_prediction_results_all_sequential_withoutClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_sequential_withoutClinical_withTBA.rds"
+)
 
 prediction_results_all_sequential_withoutClinical_withTBA = readRDS(p_prediction_results_all_sequential_withoutClinical_withTBA)
 
 # Cumulative approach, with clinical variables, without TBA
-p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path("output",
-                                                                    "results",
-                                                                    "prediction_results_all_cumulative_withClinical_withoutTBA.rds")
+p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_cumulative_withClinical_withoutTBA.rds"
+)
 
 prediction_results_all_cumulative_withClinical_withoutTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withoutTBA)
 
 # Cumulative approach, without clinical variables, without TBA
-p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path("output",
-                                                                       "results",
-                                                                       "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds")
+p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds"
+)
 
 prediction_results_all_cumulative_withoutClinical_withoutTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withoutTBA)
 
 # Sequential approach, with clinical variables, without TBA
-p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path("output",
-                                                                    "results",
-                                                                    "prediction_results_all_sequential_withClinical_withoutTBA.rds")
+p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_sequential_withClinical_withoutTBA.rds"
+)
 
 prediction_results_all_sequential_withClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withClinical_withoutTBA)
 
 # Sequential approach, without clinical variables, without TBA
-p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path("output",
-                                                                       "results",
-                                                                       "prediction_results_all_sequential_withoutClinical_withoutTBA.rds")
+p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
+  "output",
+  "results",
+  "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
+)
 
 prediction_results_all_sequential_withoutClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withoutClinical_withoutTBA)
 
@@ -83,7 +101,10 @@ include_tba_set = c("Include TBA" = "withTBA", "Exclude TBA" = "withoutTBA")
 vaccine_set = names(prediction_results_all_sequential_withoutClinical_withTBA)
 
 all_sets <- unique(unlist(
-  lapply(prediction_results_all_sequential_withClinical_withTBA, names)
+  lapply(
+    prediction_results_all_sequential_withClinical_withTBA,
+    names
+  )
 ))
 
 # Extract numeric part from strings like "day 7"
@@ -446,7 +467,7 @@ ui <- fluidPage(
             numericInput(
               inputId = "cv_predictions_download_height",
               label   = "Height of download (inches):",
-              value   = 8,
+              value   = 4,
               min     = 1
             ),
             numericInput(
@@ -478,7 +499,7 @@ ui <- fluidPage(
     # close tabPanel
     # Close tabPanel for cv predictions tab
     
-    ### TAB 2 : VARIABLE IMPORTANCE ###
+    ### TAB 3 : VARIABLE IMPORTANCE ###
     tabPanel(
       title = "Variable Importance",
       value = "variable_importance_tab",
@@ -674,14 +695,14 @@ input$results_comparison_feature_set = feature_set_set
 input$cv_predictions_approach = "sequential"
 input$cv_predictions_include_clinical = "withClinical"
 input$cv_predictions_vaccine = "Yellow Fever (LV)"
-input$cv_predictions_feature_set = "Day 0"
+input$cv_predictions_feature_set = c("Day 0")
 input$cv_predictions_include_tba = "withoutTBA"
 
 input$variable_importance_approach = "sequential"
 input$variable_importance_include_clinical = "withClinical"
 input$variable_importance_include_tba = "withTBA"
 input$variable_importance_vaccine = "Yellow Fever (LV)"
-input$variable_importance_feature_set = "Day 3"
+input$variable_importance_feature_set = c("Day 0", "Day 3")
 input$variable_importance_topN = 30
 
 ### SERVER FUNCTION ###
@@ -838,9 +859,19 @@ server <- function(input, output, session) {
         )
       
       
-      plot_subtitle = paste0(ifelse(input$results_comparison_approach == "sequential", "Sequential", "Cumulative"),
-                             " prediction approach, clinical variables ",
-                             ifelse(input$results_comparison_include_clinical == "withClinical", "included", "not included"))
+      plot_subtitle = paste0(
+        ifelse(
+          input$results_comparison_approach == "sequential",
+          "Sequential",
+          "Cumulative"
+        ),
+        " prediction approach, clinical variables ",
+        ifelse(
+          input$results_comparison_include_clinical == "withClinical",
+          "included",
+          "not included"
+        )
+      )
       
       
       # --- Combine with shared legend and common title ---
@@ -917,7 +948,6 @@ server <- function(input, output, session) {
   
   # 1) Dynamic UI for feature sets (timepoints) depending on vaccine / approach / include_clinical
   output$cv_predictions_feature_set_ui <- renderUI({
-    # Ensure the controlling inputs exist
     req(
       input$cv_predictions_vaccine,
       input$cv_predictions_approach,
@@ -925,11 +955,8 @@ server <- function(input, output, session) {
       input$cv_predictions_include_tba
     )
     
-    # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
     approach_key <- tolower(gsub("\\s+", "", input$cv_predictions_approach))
     
-    # Determine the includeClinical suffix expected in your object names.
-    # If the input label contains "with" we use "withClinical", otherwise "withoutClinical".
     include_label <- tolower(input$cv_predictions_include_clinical)
     include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)) {
       "withClinical"
@@ -944,15 +971,15 @@ server <- function(input, output, session) {
       "withoutTBA"
     }
     
-    # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
-    results_name <- paste0("prediction_results_all_",
-                           approach_key,
-                           "_",
-                           include_suffix,
-                           "_",
-                           include_suffix_tba)
+    results_name <- paste0(
+      "prediction_results_all_",
+      approach_key,
+      "_",
+      include_suffix,
+      "_",
+      include_suffix_tba
+    )
     
-    # Try to fetch the object safely (returns NULL if missing)
     results_obj <- get0(results_name, envir = .GlobalEnv)
     
     choices <- character(0)
@@ -965,26 +992,32 @@ server <- function(input, output, session) {
     }
     
     if (length(choices) == 0) {
-      # No feature sets available: show a disabled-looking select with an informative label
       selectInput(
         inputId = "cv_predictions_feature_set",
         label = NULL,
         choices = c("No feature sets available" = ""),
-        selected = ""
+        selected = "",
+        multiple = TRUE
       )
     } else {
-      # keep previous selection if still valid, otherwise choose the first available
       previous <- isolate(input$cv_predictions_feature_set)
-      selected_choice <- if (!is.null(previous) &&
-                             previous %in% choices)
-        previous
+      
+      # Keep only previous selections that are still present in choices,
+      # preserving the user's selection order.
+      valid_prev <- intersect(as.character(previous), choices)
+      
+      # If nothing valid remains, fall back to the first choice (or NULL to select none)
+      selected_choice <- if (length(valid_prev) > 0)
+        valid_prev
       else
         choices[1]
+      
       selectInput(
         inputId = "cv_predictions_feature_set",
         label = NULL,
         choices = choices,
-        selected = selected_choice
+        selected = selected_choice,
+        multiple = TRUE
       )
     }
   })
@@ -998,89 +1031,238 @@ server <- function(input, output, session) {
       # build the object name the same way we do in renderUI
       approach_key <- tolower(gsub("\\s+", "", input$cv_predictions_approach))
       include_label <- tolower(input$cv_predictions_include_clinical)
-      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)){
+      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)) {
         "withClinical"
-      } else {"withoutClinical"}
+      } else {
+        "withoutClinical"
+      }
       include_label_tba <- tolower(input$cv_predictions_include_tba)
       include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
         "withTBA"
       } else {
         "withoutTBA"
       }
-      results_name <- paste0("prediction_results_all_",
-                             approach_key,
-                             "_",
-                             include_suffix,
-                             "_",
-                             include_suffix_tba)
+      results_name <- paste0(
+        "prediction_results_all_",
+        approach_key,
+        "_",
+        include_suffix,
+        "_",
+        include_suffix_tba
+      )
       
       # Safely fetch the results object
       selected_results <- get0(results_name, envir = .GlobalEnv)
-      validate(need(
-        !is.null(selected_results),
-        paste0(
-          "Results object '",
-          results_name,
-          "' not found in the global environment."
+      
+      if (length(input$cv_predictions_feature_set) == 1) {
+        # SINGLE FEATURE SET SELECTION CASE
+        selected_results_vaccine <- selected_results[[input$cv_predictions_vaccine]]
+        
+        selected_results_vaccine_feature_set <- selected_results_vaccine[[input$cv_predictions_feature_set]]
+        
+        # Try to extract the plot object; expect it under [["plots"]][["cv_results"]]
+        plot_obj <- NULL
+        if (is.list(selected_results_vaccine_feature_set) &&
+            !is.null(selected_results_vaccine_feature_set[["plots"]]) &&
+            !is.null(selected_results_vaccine_feature_set[["plots"]][["cv_results"]])) {
+          plot_obj <- selected_results_vaccine_feature_set[["plots"]][["cv_results"]]
+        }
+        
+        validate(
+          need(
+            !is.null(plot_obj),
+            "Plot not found for the selected vaccine / feature set / approach."
+          )
         )
-      ))
-      
-      # Ensure the vaccine exists in the object
-      validate(
-        need(
-          input$cv_predictions_vaccine %in% names(selected_results),
-          "Selected vaccine not found in the selected results object."
+        
+        # replace the letter "R" with the greek letter rho 
+        for (i in seq_along(plot_obj$layers)) {
+          lyr <- plot_obj$layers[[i]]
+          
+          # Static annotation, e.g. annotate("text", label = "R = 0.85")
+          if (!is.null(lyr$aes_params$label) && is.character(lyr$aes_params$label)) {
+            lbl <- lyr$aes_params$label
+            if (grepl("\\bR\\b", lbl)) {
+              if (grepl("=", lbl)) {
+                val <- trimws(sub(".*=", "", lbl))
+                plot_obj$layers[[i]]$aes_params$label <- bquote(rho == .(val))
+              } else {
+                plot_obj$layers[[i]]$aes_params$label <- expression(rho)
+              }
+            }
+          }
+        }
+        
+        print(plot_obj)
+        
+        # END SINGLE FEATURE SET SELECTION CASE
+      } else if (length(input$cv_predictions_feature_set) > 1) {
+        # MULTIPLE FEATURE SETS CASE
+        
+        day_sets <- input$cv_predictions_feature_set[grepl("^Day\\s*[0-9]+$", input$cv_predictions_feature_set)]
+        day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
+        
+        if ("clinical" %in% input$cv_predictions_feature_set) {
+          sorted_feature_sets <- c("clinical", paste0("Day ", sort(day_nums)))
+        } else {
+          sorted_feature_sets <- c(paste0("Day ", sort(day_nums)))
+        }
+        
+        # --- annotation tuning (change these if you want smaller/larger annotations) ---
+        ann_size  <- 4   # geom_text/geom_label size (ggplot2 units) - smaller number => smaller text
+        ann_alpha <- 0.9   # transparency for annotation text
+        
+        # --- blank placeholder (pure white, no border) --------------------------------
+        blank_placeholder <- function() {
+          ggplot() + geom_blank() + theme_void() +
+            theme(
+              plot.background = element_rect(fill = "white", colour = NA),
+              plot.margin = margin(6, 6, 6, 6)
+            )
+        }
+        
+        # --- build grobs: top row headers, bottom row plots ----------------------------
+        n_col <- length(sorted_feature_sets)
+        
+        # We'll create 2 rows (headers + plots) and n_col columns
+        total_rows <- 2
+        total_cols <- n_col
+        
+        grob_list <- vector("list", total_rows * total_cols)
+        
+        # top row: feature set headers
+        for (j in seq_len(n_col)) {
+          h <- textGrob(
+            label = sorted_feature_sets[j],
+            gp = gpar(fontsize = 16, fontface = "bold"),
+            just = "center"
+          )
+          grob_list[[j]] <- h
+        }
+        
+        # bottom row: the plots (with panel border inside each plot); blanks if missing
+        for (j in seq_len(n_col)) {
+          feat <- sorted_feature_sets[j]
+          got_plot <- NULL
+          
+          if (!is.null(selected_results[[input$cv_predictions_vaccine]]) &&
+              !is.null(selected_results[[input$cv_predictions_vaccine]][[feat]])) {
+            inner <- selected_results[[input$cv_predictions_vaccine]][[feat]]
+            if (!is.null(inner[["plots"]]) &&
+                !is.null(inner[["plots"]][["cv_results"]])) {
+              got_plot <- inner[["plots"]][["cv_results"]]
+            }
+          }
+          
+          if (!is.null(got_plot) && inherits(got_plot, "ggplot")) {
+            # Keep metric annotations but reduce their size/alpha
+            p_mod <- got_plot + labs(title = NULL, subtitle = NULL)
+            
+            # shrink any geom_text / geom_label layers
+            if (length(p_mod$layers) > 0) {
+              for (k in seq_along(p_mod$layers)) {
+                if (inherits(p_mod$layers[[k]]$geom, "GeomText") ||
+                    inherits(p_mod$layers[[k]]$geom, "GeomLabel")) {
+                  # set fixed text size & alpha
+                  p_mod$layers[[k]]$aes_params$size  <- ann_size
+                  p_mod$layers[[k]]$geom_params$size <- ann_size
+                  p_mod$layers[[k]]$aes_params$alpha  <- ann_alpha
+                  p_mod$layers[[k]]$geom_params$alpha <- ann_alpha
+                  
+                  # for labels, reduce padding/rounding so boxes are smaller
+                  if (inherits(p_mod$layers[[k]]$geom, "GeomLabel")) {
+                    p_mod$layers[[k]]$geom_params$label.padding <- grid::unit(0.05, "lines")
+                    p_mod$layers[[k]]$geom_params$label.r <- grid::unit(0.05, "lines")
+                  }
+                }
+              }
+            }
+            
+            # apply compact theme and panel border
+            p_mod <- p_mod +
+              theme(
+                plot.title = element_blank(),
+                plot.subtitle = element_blank(),
+                plot.margin = margin(6, 6, 6, 6),
+                axis.title.x = element_blank(),
+                axis.title.y = element_blank(),
+                axis.text.x = element_text(size = 7),
+                axis.text.y = element_text(size = 7),
+                panel.border = element_rect(
+                  colour = "grey70",
+                  fill = NA,
+                  size = 0.8
+                ),
+                panel.background = element_rect(fill = "white", colour = NA)
+              )
+            
+            grob_list[[n_col + j]] <- ggplotGrob(p_mod) # second row index = n_col + j
+          } else {
+            # missing -> blank white placeholder (no border)
+            grob_list[[n_col + j]] <- ggplotGrob(blank_placeholder())
+          }
+        }
+        
+        # --- layout matrix ------------------------------------------------------------
+        layout_mat <- matrix(
+          seq_len(total_rows * total_cols),
+          nrow = total_rows,
+          ncol = total_cols,
+          byrow = TRUE
         )
-      )
-      
-      selected_results_vaccine <- selected_results[[input$cv_predictions_vaccine]]
-      
-      # Ensure feature set is non-empty and exists
-      validate(need(
-        !is.null(input$cv_predictions_feature_set) &&
-          nzchar(input$cv_predictions_feature_set),
-        "No feature set selected."
-      ))
-      validate(
-        need(
-          input$cv_predictions_feature_set %in% names(selected_results_vaccine),
-          "Selected feature set is not available for this vaccine / approach."
+        
+        # sizing: tweak these if the result looks cramped
+        col_widths <- rep(4, n_col)
+        row_heights <- c(1, 5)  # 1st row small for headers, second row big for plots
+        
+        # Create the arranged grob
+        final_grob <- arrangeGrob(
+          grobs = grob_list,
+          layout_matrix = layout_mat,
+          widths = col_widths,
+          heights = row_heights,
+          top = textGrob(
+            paste0(
+              "Cross validation predictions - ",
+              input$cv_predictions_vaccine
+            ),
+            gp = gpar(fontsize = 18, fontface = "bold")
+          )
         )
-      )
-      
-      selected_results_vaccine_feature_set <- selected_results_vaccine[[input$cv_predictions_feature_set]]
-      
-      # Try to extract the plot object; expect it under [["plots"]][["cv_results"]]
-      plot_obj <- NULL
-      if (is.list(selected_results_vaccine_feature_set) &&
-          !is.null(selected_results_vaccine_feature_set[["plots"]]) &&
-          !is.null(selected_results_vaccine_feature_set[["plots"]][["cv_results"]])) {
-        plot_obj <- selected_results_vaccine_feature_set[["plots"]][["cv_results"]]
+        
+        final_grob_with_axes <- gridExtra::grid.arrange(
+          final_grob,
+          left = textGrob(
+            "Predicted",
+            rot = 90, gp = gpar(fontsize = 20)
+          ),
+          bottom = textGrob(
+            "Observed",
+            gp = gpar(fontsize = 20)
+          )
+        )
+        
+        return(final_grob_with_axes)
+        
       }
       
-      validate(need(
-        !is.null(plot_obj),
-        "Plot not found for the selected vaccine / feature set / approach."
-      ))
-      
-      # Return the ggplot object (or base plot object). renderPlot will print it.
-      plot_obj
     }) # end isolate
   }) # end reactive
   
   # 3) Render the plot in the UI
   output$cv_predictions_plot <- renderPlot({
-    # cv_predictions_plot() returns a ggplot object (or similar). print it so it is drawn correctly.
     p <- cv_predictions_plot()
-    # If it's a ggplot, print; if it's a plotting expression already drawn by base graphics, call it directly.
+    req(p)
+    
     if (inherits(p, "ggplot")) {
       print(p)
+    } else if (inherits(p, c("gtable", "grob"))) {
+      grid::grid.newpage()
+      grid::grid.draw(p)
     } else {
-      # attempt to plot generic R plot objects
       tryCatch({
         print(p)
       }, error = function(e) {
-        # fallback: show a text message if the object can't be plotted
         plot.new()
         text(0.5, 0.5, "Unable to render the selected plot object.")
       })
@@ -1090,34 +1272,112 @@ server <- function(input, output, session) {
   # 4) Download handler (unchanged except using get0-safe reactive above)
   output$download_cv_predictions_plot <- downloadHandler(
     filename = function() {
-      req(input$cv_predictions_download_format)
-      paste0("cv_predictions_",
-             input$cv_predictions_approach,
-             "_",
-             input$cv_predictions_include_clinical,
-             "_",
-             input$results_comparison_include_tba,
-             "_",
-             gsub("[()]", "", gsub(" ", "", input$cv_predictions_vaccine)),
-             "_",
-             gsub("[()]", "", gsub(" ", "", input$cv_predictions_feature_set)),
-             ".",
-             input$cv_predictions_download_format)
+      fmt <- req(input$cv_predictions_download_format)
+      vaccine_clean <- gsub("[()]", "", gsub(" ", "", input$cv_predictions_vaccine))
+      
+      day_sets <- input$cv_predictions_feature_set[grepl("^Day\\s*[0-9]+$", input$cv_predictions_feature_set)]
+      day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
+      
+      if ("clinical" %in% input$cv_predictions_feature_set) {
+        sorted_feature_sets <- c("clinical", paste0("Day ", sort(day_nums)))
+      } else {
+        sorted_feature_sets <- c(paste0("Day ", sort(day_nums)))
+      }
+      
+      feature_sets_collapsed <- paste(sorted_feature_sets, collapse = "-")
+      feature_clean <- gsub("[()]", "", gsub(" ", "", feature_sets_collapsed))
+      
+      paste0(
+        "cv_predictions_",
+        input$cv_predictions_approach,
+        "_",
+        input$cv_predictions_include_clinical,
+        "_",
+        input$results_comparison_include_tba,
+        "_",
+        vaccine_clean,
+        "_",
+        feature_clean,
+        ".",
+        fmt
+      )
     },
     content = function(file) {
-      # ensure the plot reactive is available
-      req(cv_predictions_plot())
+      p <- req(cv_predictions_plot())
+      fmt <- tolower(req(input$cv_predictions_download_format))
+      width_in  <- req(input$cv_predictions_download_width)
+      height_in <- req(input$cv_predictions_download_height)
+      dpi <- req(input$cv_predictions_download_dpi)
       
-      # ggsave expects a ggplot object; if your object is base graphics, you'd need a different approach.
-      ggsave(
-        filename = file,
-        plot     = cv_predictions_plot(),
-        device   = input$cv_predictions_download_format,
-        width    = input$cv_predictions_download_width,
-        height   = input$cv_predictions_download_height,
-        dpi      = input$cv_predictions_download_dpi,
-        units    = "in"
-      )
+      # If ggplot, use ggsave
+      if (inherits(p, "ggplot")) {
+        ggplot2::ggsave(
+          filename = file,
+          plot     = p,
+          device   = fmt,
+          width    = width_in,
+          height   = height_in,
+          dpi      = dpi,
+          units    = "in"
+        )
+        return()
+      }
+      
+      # If grob/gtable: draw to device manually
+      if (fmt %in% c("pdf", "svg")) {
+        if (fmt == "pdf")
+          grDevices::pdf(file = file,
+                         width = width_in,
+                         height = height_in)
+        if (fmt == "svg")
+          grDevices::svg(file = file,
+                         width = width_in,
+                         height = height_in)
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      }
+      
+      # raster formats: convert to pixels
+      px_width  <- ceiling(width_in * dpi)
+      px_height <- ceiling(height_in * dpi)
+      
+      if (fmt %in% c("png")) {
+        grDevices::png(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else if (fmt %in% c("jpg", "jpeg")) {
+        grDevices::jpeg(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else if (fmt %in% c("tiff")) {
+        grDevices::tiff(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else {
+        stop("Unsupported format for saving grob: ", fmt)
+      }
     }
   )
   
@@ -1127,7 +1387,6 @@ server <- function(input, output, session) {
   
   # 1) Dynamic UI for feature sets (timepoints) depending on vaccine / approach / include_clinical
   output$variable_importance_feature_set_ui <- renderUI({
-    # Ensure the controlling inputs exist
     req(
       input$variable_importance_vaccine,
       input$variable_importance_approach,
@@ -1135,11 +1394,8 @@ server <- function(input, output, session) {
       input$variable_importance_include_tba
     )
     
-    # Normalize approach (remove spaces and lowercase) to be robust to labels like "Cumulative"
     approach_key <- tolower(gsub("\\s+", "", input$variable_importance_approach))
     
-    # Determine the includeClinical suffix expected in your object names.
-    # If the input label contains "with" we use "withClinical", otherwise "withoutClinical".
     include_label <- tolower(input$variable_importance_include_clinical)
     include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)) {
       "withClinical"
@@ -1153,15 +1409,15 @@ server <- function(input, output, session) {
       "withoutTBA"
     }
     
-    # Build object name exactly as you described: prediction_results_all_<approach>_<withClinical|withoutClinical>
-    results_name <- paste0("prediction_results_all_",
-                           approach_key,
-                           "_",
-                           include_suffix,
-                           "_",
-                           include_suffix_tba)
+    results_name <- paste0(
+      "prediction_results_all_",
+      approach_key,
+      "_",
+      include_suffix,
+      "_",
+      include_suffix_tba
+    )
     
-    # Try to fetch the object safely (returns NULL if missing)
     results_obj <- get0(results_name, envir = .GlobalEnv)
     
     choices <- character(0)
@@ -1174,26 +1430,29 @@ server <- function(input, output, session) {
     }
     
     if (length(choices) == 0) {
-      # No feature sets available: show a disabled-looking select with an informative label
       selectInput(
         inputId = "variable_importance_feature_set",
         label = NULL,
         choices = c("No feature sets available" = ""),
-        selected = ""
+        selected = "",
+        multiple = TRUE
       )
     } else {
-      # keep previous selection if still valid, otherwise choose the first available
       previous <- isolate(input$variable_importance_feature_set)
-      selected_choice <- if (!is.null(previous) &&
-                             previous %in% choices)
-        previous
+      
+      # keep any previous selections that remain valid; otherwise pick the first choice
+      valid_prev <- intersect(as.character(previous), choices)
+      selected_choice <- if (length(valid_prev) > 0)
+        valid_prev
       else
         choices[1]
+      
       selectInput(
         inputId = "variable_importance_feature_set",
         label = NULL,
         choices = choices,
-        selected = selected_choice
+        selected = selected_choice,
+        multiple = TRUE
       )
     }
   })
@@ -1207,174 +1466,293 @@ server <- function(input, output, session) {
       # build the object name the same way we do in renderUI
       approach_key <- tolower(gsub("\\s+", "", input$variable_importance_approach))
       include_label <- tolower(input$variable_importance_include_clinical)
-      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)){
-        "withClinical" } else {
+      include_suffix <- if (grepl("withClinical", include_label, ignore.case = TRUE)) {
+        "withClinical"
+      } else {
         "withoutClinical"
-        }
+      }
       include_label_tba <- tolower(input$variable_importance_include_tba)
       include_suffix_tba <- if (grepl("withTBA", include_label_tba, ignore.case = TRUE)) {
         "withTBA"
       } else {
         "withoutTBA"
       }
-      results_name <- paste0("prediction_results_all_",
-                             approach_key,
-                             "_",
-                             include_suffix,
-                             "_",
-                             include_suffix_tba)
+      results_name <- paste0(
+        "prediction_results_all_",
+        approach_key,
+        "_",
+        include_suffix,
+        "_",
+        include_suffix_tba
+      )
       
       # Safely fetch the results object
       selected_results <- get0(results_name, envir = .GlobalEnv)
-      validate(need(
-        !is.null(selected_results),
-        paste0(
-          "Results object '",
-          results_name,
-          "' not found in the global environment."
-        )
-      ))
-      
-      # Ensure the vaccine exists in the object
-      validate(
-        need(
-          input$variable_importance_vaccine %in% names(selected_results),
-          "Selected vaccine not found in the selected results object."
-        )
-      )
       
       selected_results_vaccine <- selected_results[[input$variable_importance_vaccine]]
       
-      # Ensure feature set is non-empty and exists
-      validate(need(
-        !is.null(input$variable_importance_feature_set) &&
-          nzchar(input$variable_importance_feature_set),
-        "No feature set selected."
-      ))
-      validate(
-        need(
-          input$variable_importance_feature_set %in% names(selected_results_vaccine),
-          "Selected feature set is not available for this vaccine / approach."
-        )
-      )
-      
-      selected_results_vaccine_feature_set <- selected_results_vaccine[[input$variable_importance_feature_set]]
-      
-      # Try to extract the plot object; expect it under [["var_imp"]]
-      
-      metrics = selected_results_vaccine_feature_set[["metrics"]]
-      
-      plot_obj = selected_results_vaccine_feature_set[["var_imp"]]
-      
-      validate(need(
-        !is.null(plot_obj),
-        "Plot not found for the selected vaccine / feature set / approach."
-      ))
-      
-      # plot topN mean standardised feature importances with coloured errorbars and points
-      
-      # Prepare plotting data
-      plot_df <- plot_obj %>%
-        slice_min(order_by = mean_rank,
-                  n = input$variable_importance_topN) %>%
-        mutate(
-          mean_imp = as.numeric(mean_imp),
-          sd_imp   = as.numeric(sd_imp),
-          feature  = forcats::fct_reorder(feature, mean_imp),
-          xmin = pmax(0, mean_imp - sd_imp),
-          xmax = pmin(100, mean_imp + sd_imp)
-        )
-      
-      colour_df = plot_obj %>%
-        dplyr::select(feature_group, feature_colour) %>%
-        distinct()
-      
-      pred_cols = colour_df$feature_colour
-      
-      names(pred_cols) = colour_df$feature_group
-      
-      plot_title = paste0(
-        "Variable Importance : " ,
-        input$variable_importance_approach,
-        " prediction approach, clinical variables ",
-        ifelse(
-          input$variable_importance_include_clinical == "withClinical",
-          "included",
-          "not included"
-        ))
-      
-      # Plot average standardised variable importance
-      vi_plot <- plot_df %>%
-        ggplot(aes(x = mean_imp, y = feature)) +
-        geom_errorbar(
-          aes(
-            xmin = xmin,
-            xmax = xmax,
-            colour = feature_group
-          ),
-          width = 0.25,
-          size = 1,
-          orientation = "y"
-        ) +
-        geom_point(aes(colour = feature_group), size = 3) +
-        scale_colour_manual(
-          name = "Feature set",
-          values = pred_cols,
-          na.value = "#777777",
-          guide = guide_legend(
-            override.aes = list(
-              linetype = 1,
-              shape = 16,
-              size = 5
-            ),
-            keywidth  = unit(2.2, "cm"),
-            keyheight = unit(0.9, "cm"),
-            ncol = 1
+      # IF ONLY ONE TIMEPOINT SELECTED #
+      if (length(input$variable_importance_feature_set) == 1) {
+        selected_results_vaccine_feature_set <- selected_results_vaccine[[input$variable_importance_feature_set]]
+        
+        # Try to extract the plot object; expect it under [["var_imp"]]
+        
+        metrics = selected_results_vaccine_feature_set[["metrics"]]
+        
+        plot_obj = selected_results_vaccine_feature_set[["var_imp"]]
+        
+        validate(
+          need(
+            !is.null(plot_obj),
+            "Plot not found for the selected vaccine / feature set / approach."
           )
-        ) +
-        scale_x_continuous(limits = c(0, 100), expand = expansion(mult = c(0.02, 0.12))) +
-        labs(
-          x = "Mean standardised training-set variable importance",
-          y = NULL,
-          title = plot_title,
-          subtitle = bquote(     "sRMSE =" ~ .(sprintf("%.2f", metrics$sRMSE)) * ", " ~ rho == .(sprintf("%.2f", metrics$Rspearman))   )
-          ) +
-        theme_minimal() +
-        theme(
-          plot.title = element_text(
-            size = 20,
-            face = "bold",
-            hjust = 0.5
-          ),
-          plot.subtitle = element_text(size = 20, hjust = 0.5),
-          axis.title = element_text(size = 14),
-          axis.text = element_text(size = 12),
-          panel.grid.major.y = element_blank(),
-          panel.grid.minor = element_blank(),
-          axis.ticks.y = element_blank(),
-          legend.title = element_text(size = 16),
-          legend.text  = element_text(size = 14),
-          legend.key.size = unit(1.1, "cm")
         )
-      
-      print(vi_plot)
+        
+        # plot topN mean standardised feature importances with coloured errorbars and points
+        
+        # Prepare plotting data
+        plot_df <- plot_obj %>%
+          slice_min(order_by = mean_rank,
+                    n = input$variable_importance_topN) %>%
+          mutate(
+            mean_imp = as.numeric(mean_imp),
+            sd_imp   = as.numeric(sd_imp),
+            feature  = forcats::fct_reorder(feature, mean_imp),
+            xmin = pmax(0, mean_imp - sd_imp),
+            xmax = pmin(100, mean_imp + sd_imp)
+          )
+        
+        colour_df = plot_obj %>%
+          dplyr::select(feature_group, feature_colour) %>%
+          distinct()
+        
+        pred_cols = colour_df$feature_colour
+        
+        names(pred_cols) = colour_df$feature_group
+        
+        plot_title = paste0(
+          "Variable Importance : " ,
+          input$variable_importance_approach,
+          " prediction approach, clinical variables ",
+          ifelse(
+            input$variable_importance_include_clinical == "withClinical",
+            "included",
+            "not included"
+          )
+        )
+        
+        # Plot average standardised variable importance
+        vi_plot <- plot_df %>%
+          ggplot(aes(x = mean_imp, y = feature)) +
+          geom_errorbar(
+            aes(
+              xmin = xmin,
+              xmax = xmax,
+              colour = feature_group
+            ),
+            width = 0.25,
+            size = 1,
+            orientation = "y"
+          ) +
+          geom_point(aes(colour = feature_group), size = 3) +
+          scale_colour_manual(
+            name = "Feature set",
+            values = pred_cols,
+            na.value = "#777777",
+            guide = guide_legend(
+              override.aes = list(
+                linetype = 1,
+                shape = 16,
+                size = 5
+              ),
+              keywidth  = unit(2.2, "cm"),
+              keyheight = unit(0.9, "cm"),
+              ncol = 1
+            )
+          ) +
+          scale_x_continuous(limits = c(0, 100),
+                             expand = expansion(mult = c(0.02, 0.12))) +
+          labs(
+            x = "Mean standardised training-set variable importance",
+            y = NULL,
+            title = plot_title,
+            subtitle = bquote("sRMSE =" ~ .(sprintf(
+              "%.2f", metrics$sRMSE
+            )) * ", " ~ rho == .(
+              sprintf("%.2f", metrics$Rspearman)
+            ))
+          ) +
+          theme_minimal() +
+          theme(
+            plot.title = element_text(
+              size = 20,
+              face = "bold",
+              hjust = 0.5
+            ),
+            plot.subtitle = element_text(size = 20, hjust = 0.5),
+            axis.title = element_text(size = 14),
+            axis.text = element_text(size = 12),
+            panel.grid.major.y = element_blank(),
+            panel.grid.minor = element_blank(),
+            axis.ticks.y = element_blank(),
+            legend.title = element_text(size = 16),
+            legend.text  = element_text(size = 14),
+            legend.key.size = unit(1.1, "cm")
+          )
+        
+        print(vi_plot) # END IF CLAUSE FOR SINGULAR FEATURE SET SELECTION
+      } else if (length(input$variable_importance_feature_set) > 1) {
+        # BEGIN IF CLAUSE FOR MULTIPLE FEATURE SET SELECTIONS
+        
+        
+        # --- blank placeholder (pure white, no border) --------------------------------
+        blank_placeholder <- function() {
+          ggplot() + geom_blank() + theme_void() +
+            theme(
+              plot.background = element_rect(fill = "white", colour = NA),
+              plot.margin = margin(6, 6, 6, 6)
+            )
+        }
+        
+        # --- helper function to build a single VI plot ---------------------------------
+        make_vi_plot <- function(vac,
+                                 feature_set,
+                                 topN,
+                                 wrap_width = 20) {
+          selected_results_vaccine_feature_set <- selected_results_vaccine[[feature_set]]
+          
+          if (is.null(selected_results_vaccine_feature_set))
+            return(blank_placeholder())
+          
+          metrics <- selected_results_vaccine_feature_set[["metrics"]]
+          plot_obj <- selected_results_vaccine_feature_set[["var_imp"]]
+          
+          # Prepare topN data and wrap feature names
+          plot_df <- plot_obj %>%
+            slice_min(order_by = mean_rank, n = topN) %>%
+            mutate(
+              mean_imp = as.numeric(mean_imp),
+              sd_imp   = as.numeric(sd_imp),
+              feature  = forcats::fct_reorder(
+                stringr::str_wrap(feature, width = wrap_width),
+                mean_imp
+              ),
+              xmin = pmax(0, mean_imp - sd_imp),
+              xmax = pmin(100, mean_imp + sd_imp)
+            )
+          
+          # colours
+          colour_df <- plot_obj %>%
+            dplyr::select(feature_group, feature_colour) %>%
+            distinct()
+          pred_cols <- colour_df$feature_colour
+          names(pred_cols) <- colour_df$feature_group
+          
+          # Build plot
+          p <- ggplot(plot_df, aes(x = feature, y = mean_imp)) +
+            geom_errorbar(
+              aes(
+                ymin = xmin,
+                ymax = xmax,
+                colour = feature_group
+              ),
+              width = 0.25,
+              size = 1,
+              orientation = "x"
+            ) +
+            geom_point(aes(colour = feature_group), size = 2) +
+            scale_colour_manual(values = pred_cols, na.value = "#777777") +
+            scale_y_continuous(limits = c(0, 100),
+                               expand = expansion(mult = c(0.02, 0.12))) +
+            labs(
+              x = NULL,
+              y = "Mean standardized VI",
+              title = feature_set,
+              subtitle = bquote(sRMSE == .(
+                sprintf("%.2f", metrics$sRMSE)
+              ) ~ ", " ~ rho == .(
+                sprintf("%.2f", metrics$Rspearman)
+              ))
+            ) +
+            coord_flip() +  # flip coordinates
+            theme_minimal() +
+            theme(
+              plot.title = element_text(
+                size = 12,
+                face = "bold",
+                hjust = 0.5
+              ),
+              plot.subtitle = element_text(size = 10, hjust = 0.5),
+              axis.text = element_text(size = 7),
+              axis.title = element_text(size = 10),
+              panel.grid.major.y = element_blank(),
+              panel.grid.minor = element_blank(),
+              legend.position = "none",
+              panel.border = element_rect(
+                colour = "grey70",
+                fill = NA,
+                size = 0.8
+              ),
+              plot.margin = margin(4, 4, 4, 4)
+            )
+          
+          return(p)
+        }
+        
+        
+        # --- build grobs for all feature sets ----------------------------------------
+        # First sort the feature sets
+        day_sets <- input$variable_importance_feature_set[grepl("^Day\\s*[0-9]+$",
+                                                                input$variable_importance_feature_set)]
+        day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
+        
+        if ("clinical" %in% input$variable_importance_feature_set) {
+          sorted_feature_sets <- c("clinical", paste0("Day ", sort(day_nums)))
+        } else {
+          sorted_feature_sets <- c(paste0("Day ", sort(day_nums)))
+        }
+        
+        grob_list <- lapply(sorted_feature_sets, function(fs)
+          make_vi_plot(
+            input$variable_importance_vaccine,
+            fs,
+            input$variable_importance_topN
+          ))
+        
+        # Assign the arranged grob to a variable
+        final_vi_grob <- arrangeGrob(
+          grobs = grob_list,
+          nrow = 1,
+          top = textGrob(
+            paste0(
+              "Variable Importance - ",
+              input$variable_importance_vaccine
+            ),
+            gp = gpar(fontsize = 18, fontface = "bold")
+          )
+        )
+        
+        return(final_vi_grob)
+        
+      }
       
     }) # end isolate
   }) # end reactive
   
-  # 3) Render the plot in the UI
   output$variable_importance_plot <- renderPlot({
-    # variable_importance_plot() returns a ggplot object (or similar). print it so it is drawn correctly.
     p <- variable_importance_plot()
-    # If it's a ggplot, print; if it's a plotting expression already drawn by base graphics, call it directly.
+    req(p) # ensures we have something to draw
+    
     if (inherits(p, "ggplot")) {
       print(p)
+    } else if (inherits(p, c("gtable", "grob"))) {
+      grid::grid.newpage()
+      grid::grid.draw(p)
     } else {
-      # attempt to plot generic R plot objects
+      # best-effort fallback
       tryCatch({
         print(p)
       }, error = function(e) {
-        # fallback: show a text message if the object can't be plotted
         plot.new()
         text(0.5, 0.5, "Unable to render the selected plot object.")
       })
@@ -1384,36 +1762,106 @@ server <- function(input, output, session) {
   # 4) Download handler (unchanged except using get0-safe reactive above)
   output$download_variable_importance_plot <- downloadHandler(
     filename = function() {
-      req(input$variable_importance_download_format)
-      paste0("variable_importance_",
-             input$variable_importance_approach,
-             "_",
-             input$variable_importance_include_clinical,
-             "_",
-             input$results_comparison_include_tba,
-             "_",
-             gsub("[()]", "", gsub(" ", "", input$variable_importance_vaccine)),
-             "_",
-             gsub("[()]", "", gsub(" ", "", input$variable_importance_feature_set)),
-             "_",
-             input$variable_importance_topN,
-             "variables.",
-             input$variable_importance_download_format)
+      fmt <- req(input$variable_importance_download_format)
+      vaccine_clean <- gsub("[()]",
+                            "",
+                            gsub(" ", "", input$variable_importance_vaccine))
+      feature_sets_collapsed <- paste(input$variable_importance_feature_set, collapse = "-")
+      feature_clean <- gsub("[()]", "", gsub(" ", "", feature_sets_collapsed))
+      
+      paste0(
+        "variable_importance_",
+        input$variable_importance_approach,
+        "_",
+        input$variable_importance_include_clinical,
+        "_",
+        input$results_comparison_include_tba,
+        "_",
+        vaccine_clean,
+        "_",
+        feature_clean,
+        "_",
+        input$variable_importance_topN,
+        "variables.",
+        fmt
+      )
     },
     content = function(file) {
-      # ensure the plot reactive is available
-      req(variable_importance_plot())
+      p <- req(variable_importance_plot())  # get the returned plot/grob
+      fmt <- tolower(req(input$variable_importance_download_format))
+      width_in  <- req(input$variable_importance_download_width)
+      height_in <- req(input$variable_importance_download_height)
+      dpi <- req(input$variable_importance_download_dpi)
       
-      # ggsave expects a ggplot object; if your object is base graphics, you'd need a different approach.
-      ggsave(
-        filename = file,
-        plot     = variable_importance_plot(),
-        device   = input$variable_importance_download_format,
-        width    = input$variable_importance_download_width,
-        height   = input$variable_importance_download_height,
-        dpi      = input$variable_importance_download_dpi,
-        units    = "in"
-      )
+      # If ggplot, use ggsave (handles many formats)
+      if (inherits(p, "ggplot")) {
+        ggplot2::ggsave(
+          filename = file,
+          plot     = p,
+          device   = fmt,
+          width    = width_in,
+          height   = height_in,
+          dpi      = dpi,
+          units    = "in"
+        )
+        return()
+      }
+      
+      # If grob/gtable, draw to a graphics device manually
+      if (fmt %in% c("pdf", "svg")) {
+        if (fmt == "pdf")
+          grDevices::pdf(file = file,
+                         width = width_in,
+                         height = height_in)
+        if (fmt == "svg")
+          grDevices::svg(file = file,
+                         width = width_in,
+                         height = height_in)
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      }
+      
+      # raster formats - width/height must be in pixels
+      px_width  <- ceiling(width_in * dpi)
+      px_height <- ceiling(height_in * dpi)
+      
+      if (fmt %in% c("png")) {
+        grDevices::png(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else if (fmt %in% c("jpg", "jpeg")) {
+        grDevices::jpeg(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else if (fmt %in% c("tiff")) {
+        grDevices::tiff(
+          filename = file,
+          width = px_width,
+          height = px_height,
+          res = dpi,
+          units = "px"
+        )
+        grid::grid.draw(p)
+        grDevices::dev.off()
+        return()
+      } else {
+        stop("Unsupported format for saving grob: ", fmt)
+      }
     }
   )
   
@@ -1424,3 +1872,4 @@ server <- function(input, output, session) {
 
 # Run the shiny application
 shinyApp(ui, server)
+
