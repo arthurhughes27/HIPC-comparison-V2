@@ -9,6 +9,7 @@ library(clipr)
 p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withoutTBA.rds"
 )
 
@@ -38,23 +39,25 @@ for (v in vaccine_names) {
   for (fs in fs_names) {
     # safe extraction of the var_imp object
     varimp_obj <- prediction_results_all_sequential_withClinical_withoutTBA[[v]][[fs]][["var_imp"]]
-
+    
     
     # store using the feature-set name as the list name so bind_rows creates a column
     dfs[[fs]] <- varimp_obj
   }
   
-    # bind and add a column "feature_set" with the list names
-    varimp_by_vaccine[[v]] <- bind_rows(dfs, .id = "feature_set")
+  # bind and add a column "feature_set" with the list names
+  varimp_by_vaccine[[v]] <- bind_rows(dfs, .id = "feature_set")
 }
 
-get_top_vars_string <- function(vaccine_name, n_top = 10, varimp_list = varimp_by_vaccine) {
+get_top_vars_string <- function(vaccine_name,
+                                n_top = 10,
+                                varimp_list = varimp_by_vaccine) {
   # extract the combined var_imp dataframe for the vaccine
   df <- varimp_list[[vaccine_name]]
   
   # order by mean_rank ascending and pick top n
   top_vars <- df %>%
-    filter(feature_group != "clinical", mean_rank <= n_top) %>% 
+    filter(feature_group != "clinical", mean_rank <= n_top) %>%
     pull(feature)
   
   # collapse into a comma-separated string
@@ -63,13 +66,45 @@ get_top_vars_string <- function(vaccine_name, n_top = 10, varimp_list = varimp_b
 
 # Example usage:
 top20_vars_YellowFeverLV = get_top_vars_string("Yellow Fever (LV)", n_top = 20)
-writeLines(top20_vars_YellowFeverLV , fs::path("output", "results", "top20_vars_YellowFeverLV.txt"))
+writeLines(
+  top20_vars_YellowFeverLV ,
+  fs::path(
+    "output",
+    "results",
+    "prediction",
+    "top20_vars_YellowFeverLV.txt"
+  )
+)
 
 top20_vars_InfluenzaIN = get_top_vars_string("Influenza (IN)", n_top = 20)
-writeLines(top20_vars_InfluenzaIN , fs::path("output", "results", "top20_vars_InfluenzaIN.txt"))
+writeLines(
+  top20_vars_InfluenzaIN ,
+  fs::path(
+    "output",
+    "results",
+    "prediction",
+    "top20_vars_InfluenzaIN.txt"
+  )
+)
 
 top20_vars_MeningococcusCJ = get_top_vars_string("Meningococcus (CJ)", n_top = 20)
-writeLines(top20_vars_MeningococcusCJ , fs::path("output", "results", "top20_vars_MeningococcusCJ.txt"))
+writeLines(
+  top20_vars_MeningococcusCJ ,
+  fs::path(
+    "output",
+    "results",
+    "prediction",
+    "top20_vars_MeningococcusCJ.txt"
+  )
+)
 
 top20_vars_MeningococcusPS = get_top_vars_string("Meningococcus (PS)", n_top = 20)
-writeLines(top20_vars_MeningococcusPS , fs::path("output", "results", "top20_vars_MeningococcusPS.txt"))
+writeLines(
+  top20_vars_MeningococcusPS ,
+  fs::path(
+    "output",
+    "results",
+    "prediction",
+    "top20_vars_MeningococcusPS.txt"
+  )
+)

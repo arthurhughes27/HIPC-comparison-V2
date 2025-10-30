@@ -15,6 +15,7 @@ suppressPackageStartupMessages({
 p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withClinical_withTBA.rds"
 )
 
@@ -24,6 +25,7 @@ prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_re
 p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
 )
 
@@ -33,6 +35,7 @@ prediction_results_all_cumulative_withoutClinical_withTBA = readRDS(p_prediction
 p_prediction_results_all_sequential_withClinical_withTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withTBA.rds"
 )
 
@@ -42,6 +45,7 @@ prediction_results_all_sequential_withClinical_withTBA = readRDS(p_prediction_re
 p_prediction_results_all_sequential_withoutClinical_withTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withoutClinical_withTBA.rds"
 )
 
@@ -51,6 +55,7 @@ prediction_results_all_sequential_withoutClinical_withTBA = readRDS(p_prediction
 p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withClinical_withoutTBA.rds"
 )
 
@@ -60,6 +65,7 @@ prediction_results_all_cumulative_withClinical_withoutTBA = readRDS(p_prediction
 p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds"
 )
 
@@ -69,6 +75,7 @@ prediction_results_all_cumulative_withoutClinical_withoutTBA = readRDS(p_predict
 p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withoutTBA.rds"
 )
 
@@ -78,6 +85,7 @@ prediction_results_all_sequential_withClinical_withoutTBA = readRDS(p_prediction
 p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
 )
 
@@ -1075,12 +1083,13 @@ server <- function(input, output, session) {
           )
         )
         
-        # replace the letter "R" with the greek letter rho 
+        # replace the letter "R" with the greek letter rho
         for (i in seq_along(plot_obj$layers)) {
           lyr <- plot_obj$layers[[i]]
           
           # Static annotation, e.g. annotate("text", label = "R = 0.85")
-          if (!is.null(lyr$aes_params$label) && is.character(lyr$aes_params$label)) {
+          if (!is.null(lyr$aes_params$label) &&
+              is.character(lyr$aes_params$label)) {
             lbl <- lyr$aes_params$label
             if (grepl("\\bR\\b", lbl)) {
               if (grepl("=", lbl)) {
@@ -1234,12 +1243,10 @@ server <- function(input, output, session) {
           final_grob,
           left = textGrob(
             "Predicted",
-            rot = 90, gp = gpar(fontsize = 20)
-          ),
-          bottom = textGrob(
-            "Observed",
+            rot = 90,
             gp = gpar(fontsize = 20)
-          )
+          ),
+          bottom = textGrob("Observed", gp = gpar(fontsize = 20))
         )
         
         return(final_grob_with_axes)
@@ -1872,4 +1879,3 @@ server <- function(input, output, session) {
 
 # Run the shiny application
 shinyApp(ui, server)
-

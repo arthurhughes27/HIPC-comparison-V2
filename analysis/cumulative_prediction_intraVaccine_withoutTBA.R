@@ -25,10 +25,8 @@ processed_data_folder = "data"
 prediction_figures_folder = fs::path("output", "figures", "prediction")
 
 # Path to cumulative prediction sets list
-p_load_cumulative_prediction_sets_withoutTBA <- fs::path(
-  processed_data_folder,
-  "cumulative_prediction_sets_list_withoutTBA.rds"
-)
+p_load_cumulative_prediction_sets_withoutTBA <- fs::path(processed_data_folder,
+                                                         "cumulative_prediction_sets_list_withoutTBA.rds")
 
 # Load cumulative prediction sets list
 cumulative_prediction_sets_withoutTBA = readRDS(p_load_cumulative_prediction_sets_withoutTBA)
@@ -84,7 +82,10 @@ cumulative_prediction_function = function(prediction_set_list,
   } else {
     X_mat = df_predict %>%
       dplyr::select(
-        -all_of(response_name),-all_of(clinical_cols),-vaccine_name,-vaccine_colour
+        -all_of(response_name),
+        -all_of(clinical_cols),
+        -vaccine_name,
+        -vaccine_colour
       ) %>%
       as.data.frame()
   }
@@ -439,6 +440,7 @@ for (vac in names(cumulative_prediction_sets_withoutTBA)) {
 p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withClinical_withoutTBA.rds"
 )
 
@@ -487,6 +489,7 @@ for (vac in names(cumulative_prediction_sets_withoutTBA)) {
 p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds"
 )
 
@@ -502,6 +505,7 @@ saveRDS(prediction_results_all_cumulative_withoutClinical_withoutTBA,
 p_prediction_results_all_cumulative_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withClinical_withoutTBA.rds"
 )
 
@@ -704,6 +708,7 @@ ggsave(
 p_prediction_results_all_cumulative_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_cumulative_withoutClinical_withoutTBA.rds"
 )
 

@@ -101,7 +101,7 @@ for (i in seq_along(timepoints)) {
     
     # Build the design matrix for covariates, removing if collinearity is found
     X_full <-
-      model.matrix(~ vaccine_code + age_imputed + gender + study_accession, data = df)
+      model.matrix( ~ vaccine_code + age_imputed + gender + study_accession, data = df)
     
     # Remove linearly dependent columns
     qrX    <- qr(X_full)
@@ -248,7 +248,7 @@ for (i in seq_along(timepoints)) {
 }
 
 # Specify path for saving list of results
-p_results = fs::path("output", "results", "dearseq_dgsa_list.rds")
+p_results = fs::path("output", "results", "dearseq", "dearseq_dgsa_list.rds")
 
 # Save results
 saveRDS(results_list, file = p_results)
@@ -597,5 +597,8 @@ results_df = results_df %>%
   )
 
 # Save the processed dgsa results dataframe
-p_results_df = fs::path("output", "results", "dearseq_dgsa_results_processed.rds")
+p_results_df = fs::path("output",
+                        "results",
+                        "dearseq",
+                        "dearseq_dgsa_results_processed.rds")
 saveRDS(results_df, file = p_results_df)

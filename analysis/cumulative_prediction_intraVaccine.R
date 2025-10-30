@@ -82,10 +82,7 @@ cumulative_prediction_function = function(prediction_set_list,
   } else {
     X_mat = df_predict %>%
       dplyr::select(
-        -all_of(response_name),
-        -all_of(clinical_cols),
-        -vaccine_name,
-        -vaccine_colour
+        -all_of(response_name),-all_of(clinical_cols),-vaccine_name,-vaccine_colour
       ) %>%
       as.data.frame()
   }
@@ -354,10 +351,18 @@ cumulative_prediction_function = function(prediction_set_list,
     labs(
       x = "Mean standardised training-set variable importance",
       y = NULL,
-      title = paste0("Mean standardised variable importance (top ", min(topN, length(
-        unique(vi_summary$feature)
-      )), " features)"),
-      subtitle = bquote(     "sRMSE =" ~ .(sprintf("%.2f", metrics$sRMSE)) * ", " ~ rho == .(sprintf("%.2f", metrics$Rspearman))   )
+      title = paste0(
+        "Mean standardised variable importance (top ",
+        min(topN, length(unique(
+          vi_summary$feature
+        ))),
+        " features)"
+      ),
+      subtitle = bquote("sRMSE =" ~ .(sprintf(
+        "%.2f", metrics$sRMSE
+      )) * ", " ~ rho == .(sprintf(
+        "%.2f", metrics$Rspearman
+      )))
     ) +
     theme_minimal() +
     theme(
@@ -429,11 +434,15 @@ for (vac in names(cumulative_prediction_sets)) {
 }
 
 # Save these results
-p_prediction_results_all_cumulative_withClinical_withTBA = fs::path("output",
-                                                 "results",
-                                                 "prediction_results_all_cumulative_withClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction",
+  "prediction_results_all_cumulative_withClinical_withTBA.rds"
+)
 
-saveRDS(prediction_results_all_cumulative_withClinical_withTBA, file = p_prediction_results_all_cumulative_withClinical_withTBA)
+saveRDS(prediction_results_all_cumulative_withClinical_withTBA,
+        file = p_prediction_results_all_cumulative_withClinical_withTBA)
 
 # Do the same prediction task but remove clinical variables from the prediction
 
@@ -474,11 +483,15 @@ for (vac in names(cumulative_prediction_sets)) {
 }
 
 # Save these results
-p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path("output",
-                                                    "results",
-                                                    "prediction_results_all_cumulative_withoutClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction",
+  "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
+)
 
-saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA, file = p_prediction_results_all_cumulative_withoutClinical_withTBA)
+saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA,
+        file = p_prediction_results_all_cumulative_withoutClinical_withTBA)
 
 #-------------------------------
 # Plot results
@@ -486,9 +499,12 @@ saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA, file = p_pred
 
 # Load the 'with clinical' results
 
-p_prediction_results_all_cumulative_withClinical_withTBA = fs::path("output",
-                                                 "results",
-                                                 "prediction_results_all_cumulative_withClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction",
+  "prediction_results_all_cumulative_withClinical_withTBA.rds"
+)
 
 prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withTBA)
 
@@ -496,13 +512,7 @@ prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_re
 vaccines <- names(prediction_results_all_cumulative_withClinical_withTBA)
 
 # gather all predictor-set names that appear anywhere
-all_sets <- c("clinical",
-              "Day 0",
-              "Day 1",
-              "Day 3",
-              "Day 7",
-              "Day 10",
-              "Day 14")
+all_sets <- c("clinical", "Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14")
 
 # expand grid of all combinations
 grid <- expand.grid(vaccine = vaccines,
@@ -573,7 +583,11 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = expression(paste("Spearman ", rho, " by vaccine and predictor set"))) +
+  labs(x = "Predictor set",
+       y = "Vaccine",
+       title = expression(paste(
+         "Spearman ", rho, " by vaccine and predictor set"
+       ))) +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -688,9 +702,12 @@ ggsave(
 
 # Load the 'without clinical' results
 
-p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path("output",
-                                                    "results",
-                                                    "prediction_results_all_cumulative_withoutClinical_withTBA.rds")
+p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
+  "output",
+  "results",
+  "prediction",
+  "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
+)
 
 prediction_results_all_cumulative_withoutClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withTBA)
 
@@ -769,7 +786,11 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = expression(paste("Spearman ", rho, " by vaccine and predictor set"))) +
+  labs(x = "Predictor set",
+       y = "Vaccine",
+       title = expression(paste(
+         "Spearman ", rho, " by vaccine and predictor set"
+       ))) +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),

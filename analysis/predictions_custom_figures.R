@@ -149,6 +149,7 @@ ggsave(
 p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withoutTBA.rds"
 )
 
@@ -872,21 +873,21 @@ grob_list <- lapply(feature_sets, function(fs)
   make_vi_plot(vac, fs, topN))
 
 # Assign the arranged grob to a variable
-final_vi_grob <- arrangeGrob(
-  grobs = grob_list,
-  nrow = 1,
-  top = textGrob(
-    paste0("Variable Importance — ", vac),
-    gp = gpar(fontsize = 18, fontface = "bold")
-  )
-)
+final_vi_grob <- arrangeGrob(grobs = grob_list,
+                             nrow = 1,
+                             top = textGrob(
+                               paste0("Variable Importance — ", vac),
+                               gp = gpar(fontsize = 18, fontface = "bold")
+                             ))
 
 # Save as PDF (or change to PNG/JPEG if desired)
 ggsave(
   filename = "custom_variable_importance_influenza.pdf",
   plot = final_vi_grob,
-  path = prediction_figures_folder,  # replace with your folder
-  width = 15,   # adjust width to fit all plots nicely
+  path = prediction_figures_folder,
+  # replace with your folder
+  width = 15,
+  # adjust width to fit all plots nicely
   height = 6
 )
 
@@ -998,21 +999,21 @@ grob_list <- lapply(feature_sets, function(fs)
 
 # --- arrange horizontally ----------------------------------------------------
 # Assign the arranged grob to a variable
-final_vi_grob <- arrangeGrob(
-  grobs = grob_list,
-  nrow = 1,
-  top = textGrob(
-    paste0("Variable Importance — ", vac),
-    gp = gpar(fontsize = 18, fontface = "bold")
-  )
-)
+final_vi_grob <- arrangeGrob(grobs = grob_list,
+                             nrow = 1,
+                             top = textGrob(
+                               paste0("Variable Importance — ", vac),
+                               gp = gpar(fontsize = 18, fontface = "bold")
+                             ))
 
 # Save as PDF (or change to PNG/JPEG if desired)
 ggsave(
   filename = "custom_variable_importance_yellowfeverlv.pdf",
   plot = final_vi_grob,
-  path = prediction_figures_folder,  # replace with your folder
-  width = 15,   # adjust width to fit all plots nicely
+  path = prediction_figures_folder,
+  # replace with your folder
+  width = 15,
+  # adjust width to fit all plots nicely
   height = 7
 )
 

@@ -82,7 +82,10 @@ sequential_prediction_function = function(prediction_set_list,
   } else {
     X_mat = df_predict %>%
       dplyr::select(
-        -all_of(response_name),-all_of(clinical_cols),-vaccine_name,-vaccine_colour
+        -all_of(response_name),
+        -all_of(clinical_cols),
+        -vaccine_name,
+        -vaccine_colour
       ) %>%
       as.data.frame()
   }
@@ -437,6 +440,7 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
 p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withoutTBA.rds"
 )
 
@@ -485,6 +489,7 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
 p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
 )
 
@@ -500,6 +505,7 @@ saveRDS(prediction_results_all_sequential_withoutClinical_withoutTBA,
 p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withClinical_withoutTBA.rds"
 )
 
@@ -700,6 +706,7 @@ ggsave(
 p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
   "output",
   "results",
+  "prediction",
   "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
 )
 
@@ -894,6 +901,7 @@ ggsave(
   height = 25,
   units = "cm"
 )
+
 
 
 # CUSTOM RESULTS REPRESENTATIONS #
