@@ -969,7 +969,7 @@ plot_circos(
   order = "set_all",
   quantile_scoreclip = 0.995,
   legend = FALSE,
-  plot_title = "qusage",
+  plot_title = "QuSAGE",
   title_size = 6,
   title_line = -4
 )

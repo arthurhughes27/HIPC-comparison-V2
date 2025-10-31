@@ -21,33 +21,71 @@ results_df = bind_rows(results_dearseq, results_qusage)
 
 rm(results_dearseq, results_qusage)
 
-all_row_names <- unique(results_df$gs.name.description)
-fixed_row_names_width <- max_text_width(all_row_names) + unit(2, "mm")
+abbreviate_geneset <- function(x) {
+  x <- gsub("regulation", "reg.", x)
+  x <- gsub("activation", "act.", x)
+  x <- gsub("signaling", "sign.", x)
+  x <- gsub("transcription", "transcr.", x)
+  x <- gsub("differentiation", "diff.", x)
+  x <- gsub("extracellular matrix", "ECM", x)
+  x <- gsub("mitotic cell cycle", "mit. cell cycle", x)
+  x <- gsub("cell division", "cell div.", x)
+  x <- gsub("antigen presentation", "antigen pres.", x)
+  x <- gsub("immune response", "imm. resp.", x)
+  x <- gsub("transporters", "transp.", x)
+  x <- gsub("T cells", "T-cells", x)
+  x <- gsub("B cells", "B-cells", x)
+  x <- gsub("plasma membrane", "PM", x)
+  x <- gsub("E2F transcription factor network", "E2F TF network", x)
+  x <- gsub("C-MYC transcriptional network", "C-MYC network", x)
+  x <- gsub("Rho GTPase cycle", "Rho cycle", x)
+  x <- gsub("lipid metabolism", "lipid metab.", x)
+  x <- gsub("chemokines and receptors", "chemokines/receptors.", x)
+  x <- gsub("adhesion and migration", "adhesion/migration", x)
+  x <- gsub("growth factor induced", "GF induced", x)
+  x <- gsub("viral sensing & immunity", "viral sens./imm.", x)
+  x <- gsub("network", "netw.", x)
+  x <- gsub("presentation", "pres.", x)
+  x <- gsub("complement & other receptors",
+            "complement/other receptors",
+            x)
+  return(x)
+}
 
-plot_circos = function(method_name = NULL,
-                       conditions,
-                       times,
-                       aggregates,
-                       fixed_row_names_width = 150,
-                       p_correction = c("BH", "bonferroni", "holm", "hommel", "hochberg", "BY"),
-                       p_approach = c("global", "withinTime", "withinComparison"),
-                       p_threshold = 0.05,
-                       filter_mode = c("none", "user", "data"),
-                       user_threshold = 0.5,
-                       quantile_threshold = 0.5,
-                       scores = c("fc.score", "activation.score"),
-                       y_order = c("cluster", "aggregate"),
-                       x_order = c("cluster", "set"),
-                       filter_commonDE = c(
-                         "No filtration" = "none",
-                         "Filter on across-time common DE" = "global",
-                         "Filter on within-time common DE" = "withinTime",
-                         "Filter by sharing score" = "score"
-                       ),
-                       common_proportion = 0,
-                       score_threshold = 0,
-                       quantile_scoreclip = 0.995,
-                       legend_max = NULL) {
+results_df <- results_df %>%
+  mutate(gs.name.description = abbreviate_geneset(gs.name.description))
+
+
+all_row_names <- unique(results_df$gs.name.description)
+my_fixed_row_names_width <- max_text_width(all_row_names) + unit(2, "mm")
+
+
+
+plot_heatmap = function(method_name = NULL,
+                        conditions,
+                        times,
+                        aggregates,
+                        fixed_row_names_width = 150,
+                        p_correction = c("BH", "bonferroni", "holm", "hommel", "hochberg", "BY"),
+                        p_approach = c("global", "withinTime", "withinComparison"),
+                        p_threshold = 0.05,
+                        filter_mode = c("none", "user", "data"),
+                        user_threshold = 0.5,
+                        quantile_threshold = 0.5,
+                        scores = c("fc.score", "activation.score"),
+                        y_order = c("cluster", "aggregate"),
+                        x_order = c("cluster", "set"),
+                        filter_commonDE = c(
+                          "No filtration" = "none",
+                          "Filter on across-time common DE" = "global",
+                          "Filter on within-time common DE" = "withinTime",
+                          "Filter by sharing score" = "score"
+                        ),
+                        common_proportion = 0,
+                        score_threshold = 0,
+                        quantile_scoreclip = 0.995,
+                        legend_max = NULL,
+                        title = NULL) {
   # Copy results data into a new object
   results_df_heatmap <- results_df
   
@@ -56,8 +94,6 @@ plot_circos = function(method_name = NULL,
     results_df_heatmap = results_df_heatmap %>%
       filter(method == method_name)
   }
-  
-  
   
   ## STEP 1 : DETERMINATION OF STATISTICAL SIGNIFICANCE ##
   ## We use two criteria for determining significance - p-value and effect size ##
@@ -309,7 +345,9 @@ plot_circos = function(method_name = NULL,
     width = unit(6, "mm")
   )
   
-  cond_col_map <- results_df_heatmap %>% distinct(condition, condition.colour) %>% deframe()
+  cond_col_map <- results_df_heatmap %>%
+    distinct(condition, condition.colour) %>%
+    deframe()
   
   # --- ROBUST SIGNIFICANCE HANDLING FIX ---
   sig_wide <- results_df_heatmap %>%
@@ -347,8 +385,9 @@ plot_circos = function(method_name = NULL,
     row_groups_vec <- row_groups_vec[order(ord)]
     sig_mat <- sig_mat[order(ord), , drop = FALSE]
     show_row_dend <- FALSE
-  } else
+  } else {
     show_row_dend <- TRUE
+  }
   
   row_ha <- rowAnnotation(
     `Geneset aggregate` = row_groups_vec,
@@ -368,6 +407,7 @@ plot_circos = function(method_name = NULL,
     mat,
     name = "Mean fold-change",
     col = col_fun,
+    column_gap = unit(5, "mm"),
     na_col = "grey95",
     cluster_rows = cluster_rows_argument,
     show_row_dend = show_row_dend,
@@ -377,12 +417,14 @@ plot_circos = function(method_name = NULL,
     cluster_column_slices = FALSE,
     show_column_dend = TRUE,
     column_dend_side = "top",
-    column_dend_height = unit(8, "mm"),
+    column_dend_height = unit(2, "cm"),
+    row_names_gp = gpar(fontsize = 10),
     column_names_side = "bottom",
     top_annotation = top_ha,
     left_annotation = row_ha,
     show_column_names = TRUE,
     show_row_names = TRUE,
+    row_dend_width = unit(2, units = "cm"),
     heatmap_legend_param = list(title = "Mean fold-change"),
     row_names_max_width = fixed_row_names_width,
     cell_fun = function(j, i, x, y, width, height, fill) {
@@ -399,12 +441,12 @@ plot_circos = function(method_name = NULL,
 }
 
 
-ht1 = plot_circos(
+ht1 = plot_heatmap(
   method_name = "dearseq",
   conditions = levels(results_df$condition),
-  times = c(1, 3, 7, 10),
+  times = c(1, 3, 7, 10, 14, 21),
   aggregates = levels(results_df$gs.aggregate)[-which(levels(results_df$gs.aggregate) == "NA")],
-  fixed_row_names_width = unit(500, "mm"),
+  fixed_row_names_width = unit(150, units = "mm"),
   p_correction = "BH",
   p_approach = "global",
   p_threshold = 0.05,
@@ -417,16 +459,16 @@ ht1 = plot_circos(
   filter_commonDE = "score",
   common_proportion = 0,
   score_threshold = 8,
-  quantile_scoreclip = 0.995,
-  legend_max = 2.2
+  quantile_scoreclip = 1,
+  legend_max = 1.5
 )
 
-ht2  = plot_circos(
+ht2  = plot_heatmap(
   method_name = "qusage",
   conditions = levels(results_df$condition),
-  times = c(1, 3, 7, 10),
+  times = c(1, 3, 7, 10, 14, 21),
   aggregates = levels(results_df$gs.aggregate)[-which(levels(results_df$gs.aggregate) == "NA")],
-  fixed_row_names_width = unit(500, "mm"),
+  fixed_row_names_width = unit(150, units = "mm"),
   p_correction = "BH",
   p_approach = "global",
   p_threshold = 0.05,
@@ -438,28 +480,28 @@ ht2  = plot_circos(
   x_order = "cluster",
   filter_commonDE = "score",
   common_proportion = 0,
-  score_threshold = 8,
-  quantile_scoreclip = 0.995,
-  legend_max = 2.2
+  score_threshold = 7,
+  quantile_scoreclip = 1,
+  legend_max = 1.5
 )
 
 figures_folder = fs::path("output", "figures", "dgsa")
 
 # Open PDF
-pdf(
-  fs::path(figures_folder, "heatmap_stacked.pdf"),
-  width = 20,
-  height = 20
-)
+pdf(fs::path(figures_folder, "heatmap_comparison.pdf"), width = 20, height = 22)
 
-# Define grid layout: 2 rows, 1 column
+# 3-row layout: top heatmap / spacer / bottom heatmap
 pushViewport(viewport(layout = grid.layout(
-  nrow = 2,
+  nrow = 3,
   ncol = 1,
-  heights = unit.c(unit(1, "npc") * 0.5, unit(0.5, "npc") * 0.5)
+  heights = unit.c(
+    unit(0.44, "npc"),  # top heatmap
+    unit(30, "mm"),     # spacer between heatmaps (increase to create more separation)
+    unit(0.37, "npc")   # bottom heatmap
+  )
 )))
 
-# Draw top heatmap
+# Draw top heatmap in row 1, then overlay title (inside same viewport)
 pushViewport(viewport(layout.pos.row = 1, layout.pos.col = 1))
 draw(
   ht1,
@@ -467,15 +509,31 @@ draw(
   annotation_legend_side = "right",
   newpage = FALSE
 )
+# draw title on top of heatmap (tweak offset if needed)
+grid.text(
+  "dearseq",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),   # slightly below the very top of the viewport
+  gp = gpar(fontsize = 32, fontface = "bold")
+)
 upViewport()
 
-# Draw bottom heatmap
-pushViewport(viewport(layout.pos.row = 2, layout.pos.col = 1))
+# spacer row is row 2 (nothing to draw)
+
+# Draw bottom heatmap in row 3, then overlay title (inside same viewport)
+pushViewport(viewport(layout.pos.row = 3, layout.pos.col = 1))
 draw(
   ht2,
   heatmap_legend_side = "right",
   annotation_legend_side = "right",
   newpage = FALSE
+)
+# draw title on top of bottom heatmap
+grid.text(
+  "QuSAGE",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),
+  gp = gpar(fontsize = 32, fontface = "bold")
 )
 upViewport()
 
