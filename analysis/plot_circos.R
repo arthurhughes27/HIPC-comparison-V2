@@ -2,7 +2,7 @@
 
 # Libraries
 suppressPackageStartupMessages({
-  library(tidyselect)
+  library(tidyverse)
   library(circlize)
 })
 
@@ -914,7 +914,7 @@ plot_row_annotation <- function(label = NULL,
 figures_folder = fs::path("output", "figures", "dgsa")
 
 pdf(
-  fs::path(figures_folder, "circos_side_by_side.pdf"),
+  fs::path(figures_folder, "circos_comparison.pdf"),
   width = 24,
   height = 25
 )
