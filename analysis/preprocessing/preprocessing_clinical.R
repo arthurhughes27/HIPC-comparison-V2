@@ -79,7 +79,7 @@ hipc_clinical <- hipc_clinical %>%
 # Define a colour for each vaccine
 ## This colour palette was chosen to maximise visual distinctiveness for 13 vaccines
 ## Using the "iwanthue" tool (https://medialab.github.io/iwanthue/)
-color_palette = c(
+color_palette_vaccine = c(
   "#b94a73",
   "#c6aa3c",
   "#6f71d9",
@@ -97,13 +97,156 @@ color_palette = c(
 
 # Write a helper function to assign the colours
 assign_color <- function(vaccine_name) {
-  return(color_palette[match(hipc_clinical$vaccine_name,
+  return(color_palette_vaccine[match(hipc_clinical$vaccine_name,
                              levels(hipc_clinical$vaccine_name))])
 }
 
 # Assign the colours to the vaccine names
 hipc_clinical$vaccine_colour <-
   assign_color(hipc_clinical$vaccine_name)
+
+# Define an ordering for the studies (this is for later to make figures consistent)
+study_descriptions = hipc_clinical %>% 
+  dplyr::select(vaccine_name, study_accession) %>% 
+  distinct() %>% 
+  arrange(vaccine_name)
+
+# There are three studies which include multiple vaccines 
+# SDY1260 and SDY1325 for Meningococcus CJ and PS, 
+# SDY269 for influenza IN and LV, 
+# SDY180 for influenza IN and Pneumococcus (PS)
+# Define a new variable renaming these to "SDYXa" (CJ, IN) and "SDYXb" (PS, LV) where X is replaced with the appropriate study number
+hipc_clinical = hipc_clinical %>%
+  mutate(study_accession_unique = study_accession) 
+
+hipc_clinical = hipc_clinical %>% 
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY1260" &
+        vaccine_name == "Meningococcus (CJ)",
+      "SDY1260a",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY1260" &
+        vaccine_name == "Meningococcus (PS)",
+      "SDY1260b",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY1325" &
+        vaccine_name == "Meningococcus (CJ)",
+      "SDY1325a",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY1325" &
+        vaccine_name == "Meningococcus (PS)",
+      "SDY1325b",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY269" &
+        vaccine_name == "Influenza (IN)",
+      "SDY269a",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY269" &
+        vaccine_name == "Influenza (LV)",
+      "SDY269b",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY180" &
+        vaccine_name == "Influenza (IN)",
+      "SDY180a",
+      study_accession_unique
+    )
+  ) %>%
+  mutate(
+    study_accession_unique = ifelse(
+      study_accession_unique == "SDY180" &
+        vaccine_name == "Pneumococcus (PS)",
+      "SDY180b",
+      study_accession_unique
+    )
+  )
+
+# Redefine the study order
+study_descriptions = hipc_clinical %>% 
+  dplyr::select(vaccine_name, study_accession_unique) %>% 
+  distinct() %>% 
+  arrange(vaccine_name)
+
+study_order <- study_descriptions$study_accession_unique
+
+# Assign this order to the vaccine names
+hipc_clinical <- hipc_clinical %>% 
+  mutate(study_accession_unique = factor(study_accession_unique, levels = study_order))
+
+# Define a colour for each study
+## This colour palette was chosen to represent 30 studies across 13 vaccines
+## The study colours are chosen to be a gradient within each vaccine based on the previously chosen vaccine colours 
+## Using the "supercolorpalette" tool (https://supercolorpalette.com)
+color_palette_study = c(
+  "#b94a73", # Tuberculosis (RVV)
+  "#c6aa3c", # Varicella Zoster (LV)
+  "#F1D986",
+  "#4042FB",  # Yellow Fever (LV)
+  "#6077FC",
+  "#889FFD",
+  "#B4C4FD",
+  "#64c46a", # Ebola (RVV)
+  "#be62c2", # Hepatitis A/B (IN/RP)
+  "#7d973c", # HIV (RVV)
+  "#170931",# Influenza (IN)
+  "#230C48",
+  "#2E0D5F", 
+  "#3A0A77",
+  "#460090",
+  "#5100A5",
+  "#5C00BA",
+  "#6701D0", 
+  "#7301E5", #
+  "#7E01FB",
+  "#8632FF",
+  "#8D4DFF",
+  "#9562FF",
+  "#9D74FF",
+  "#A684FF", 
+  "#AF94FF",
+  "#4ea76e", # Influenza (LV)
+  "#bc69b0", # Malaria (RP) 
+  "#33d4d1", # Meningococcus (CJ)
+  "#B2FBF8",
+  "#bb4c41", # Meningococcus (PS)
+  "#F39C90",
+  "#6a87d3", # Pneumococcus (PS)
+  "#b57736"  # Smallpox (LV)
+)
+
+# Write a helper function to assign the colours
+assign_color <- function(study_accession_unique) {
+  return(color_palette_study[match(hipc_clinical$study_accession_unique,
+                                     levels(hipc_clinical$study_accession_unique))])
+}
+
+# Assign the colours to the vaccine names
+hipc_clinical$study_colour <-
+  assign_color(hipc_clinical$study_accession_unique)
 
 # Final dataframe to be saved has samples as rows and variables as columns
 dim(hipc_clinical)
