@@ -1375,7 +1375,7 @@ results_df_qusage$gs.aggregate = factor(results_df_qusage$gs.aggregate, levels =
 aggregate_colors <- c(
   "#7c5fcd",
   "#57c39d",
-  "#c165b9",
+  "#c1121f",
   "#55c463",
   "#7082ca",
   "#64a332",

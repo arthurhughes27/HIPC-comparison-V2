@@ -1397,7 +1397,7 @@ ui <- fluidPage(
               multiple = TRUE
             ),
             selectInput(
-              inputId = "sensitivity_heatmap_p_method",
+              inputId = "sensitivity_heatmap_p_correction",
               label   = "P-value correction method:",
               choices = sensitivity_heatmap_p_correction_set,
               selected = sensitivity_heatmap_p_correction_set,
@@ -1895,7 +1895,7 @@ input$sensitivity_heatmap_conditions = conditions_set
 input$sensitivity_heatmap_time = timepoints_set[4]
 input$sensitivity_heatmap_aggregates = aggregates_set
 input$sensitivity_heatmap_p_approach =p_approach_set
-input$sensitivity_heatmap_p_method = sensitivity_heatmap_p_correction_set
+input$sensitivity_heatmap_p_correction = sensitivity_heatmap_p_correction_set
 input$sensitivity_heatmap_p_threshold =  c(0.0001, 0.001, 0.01, 0.05, 0.1)
 input$sensitivity_heatmap_fc_threshold = seq(0,1,0.2)
 input$sensitivity_heatmap_order = "set"
@@ -3735,7 +3735,7 @@ server <- function(input, output, session) {
       # Extract all desired adjusted p-value columns (e.g., "global.adjPval_BH", etc.)
       combos <- expand.grid(
         approach = input$sensitivity_heatmap_p_approach,
-        method   = input$sensitivity_heatmap_p_method,
+        method   = input$sensitivity_heatmap_p_correction,
         stringsAsFactors = FALSE
       )
       adj_cols <- with(combos, paste0(approach, ".adjPval_", method))
@@ -3758,7 +3758,7 @@ server <- function(input, output, session) {
       # Create a grid of reasonable parameter specifications, including analysis_method
       spec_grid <- CJ(
         p_spec           = as.numeric(input$sensitivity_heatmap_p_threshold),
-        p_method_spec    = input$sensitivity_heatmap_p_method,
+        p_method_spec    = input$sensitivity_heatmap_p_correction,
         p_approach_spec  = input$sensitivity_heatmap_p_approach,
         filtration_spec  = as.numeric(input$sensitivity_heatmap_fc_threshold),
         analysis_method  = input$sensitivity_heatmap_method

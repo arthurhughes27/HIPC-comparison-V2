@@ -54,6 +54,24 @@ hipc_clinical$vaccine_type <- hipc_clinical$vaccine_type %>%
 hipc_clinical <- hipc_clinical %>%
   mutate(vaccine_name = str_c(pathogen, " (", vaccine_type, ")"))
 
+# Create a shortened vaccine name variable
+hipc_clinical$vaccine_name_short <- recode(
+  hipc_clinical$vaccine_name,
+  "Ebola (RVV)"           = "Ebola (RVV)",
+  "Yellow Fever (LV)"     = "Y.F. (LV)",
+  "Smallpox (LV)"         = "Smallpox (LV)",
+  "Tuberculosis (RVV)"    = "T.B. (RVV)",
+  "Hepatitis A/B (IN/RP)" = "Hep. (IN/RP)",
+  "Meningococcus (CJ)"    = "Men. (CJ)",
+  "Meningococcus (PS)"    = "Men. (PS)",
+  "Malaria (RP)"          = "Malaria (RP)",
+  "Influenza (IN)"        = "Inf. (IN)",
+  "Influenza (LV)"        = "Inf. (LV)",
+  "Pneumococcus (PS)"     = "Pneumo. (PS)",
+  "Varicella Zoster (LV)" = "Varicella (LV)",
+  "HIV (RVV)"             = "HIV (RVV)"
+)
+
 # Define an ordering for the vaccines (this is for later to make figures consistent)
 conditions_order <- c(
   "Tuberculosis (RVV)",
@@ -71,10 +89,31 @@ conditions_order <- c(
   "Smallpox (LV)"
 )
 
-
 # Assign this order to the vaccine names
 hipc_clinical <- hipc_clinical %>% 
   mutate(vaccine_name = factor(vaccine_name, levels = conditions_order))
+
+# Same for the shortened names
+conditions_order_short <- c(
+  "T.B. (RVV)",
+  "Varicella (LV)",
+  "Y.F. (LV)",
+  "Ebola (RVV)",
+  "Hep. (IN/RP)",
+  "HIV (RVV)",
+  "Inf. (IN)",
+  "Inf. (LV)",
+  "Malaria (RP)",
+  "Men. (CJ)",
+  "Men. (PS)",
+  "Pneumo. (PS)",
+  "Smallpox (LV)"
+)
+
+
+# Assign this order to the shortened vaccine names
+hipc_clinical <- hipc_clinical %>% 
+  mutate(vaccine_name_short = factor(vaccine_name_short, levels = conditions_order_short))
 
 # Define a colour for each vaccine
 ## This colour palette was chosen to maximise visual distinctiveness for 13 vaccines
