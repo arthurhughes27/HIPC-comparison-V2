@@ -582,3 +582,35 @@ ggsave(
   dpi = 300
 )
 
+ggsave(
+  fs::path(
+    figures_folder,
+    "sensitivity_heatmap_day1.pdf"
+  ),
+  p1,
+  width = 22,
+  height = 12,
+  dpi = 300
+)
+
+ggsave(
+  fs::path(
+    figures_folder,
+    "sensitivity_heatmap_day3.pdf"
+  ),
+  p2,
+  width = 22,
+  height = 12,
+  dpi = 300
+)
+
+ggsave(
+  fs::path(
+    figures_folder,
+    "sensitivity_heatmap_day7.pdf"
+  ),
+  p3,
+  width = 22,
+  height = 12,
+  dpi = 300
+)

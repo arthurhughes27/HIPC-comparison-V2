@@ -424,7 +424,7 @@ plot_heatmap = function(method_name = NULL,
     left_annotation = row_ha,
     show_column_names = TRUE,
     show_row_names = TRUE,
-    row_dend_width = unit(2, units = "cm"),
+    row_dend_width = unit(4, units = "cm"),
     heatmap_legend_param = list(title = "Mean fold-change"),
     row_names_max_width = fixed_row_names_width,
     cell_fun = function(j, i, x, y, width, height, fill) {
@@ -458,7 +458,7 @@ ht1 = plot_heatmap(
   x_order = "cluster",
   filter_commonDE = "score",
   common_proportion = 0,
-  score_threshold = 8,
+  score_threshold = 7,
   quantile_scoreclip = 1,
   legend_max = 1.5
 )
@@ -488,16 +488,16 @@ ht2  = plot_heatmap(
 figures_folder = fs::path("output", "figures", "dgsa")
 
 # Open PDF
-pdf(fs::path(figures_folder, "heatmap_comparison.pdf"), width = 20, height = 22)
+pdf(fs::path(figures_folder, "heatmap_comparison.pdf"), width = 20, height = 25)
 
 # 3-row layout: top heatmap / spacer / bottom heatmap
 pushViewport(viewport(layout = grid.layout(
   nrow = 3,
   ncol = 1,
   heights = unit.c(
-    unit(0.44, "npc"),  # top heatmap
+    unit(0.6, "npc"),  # top heatmap
     unit(30, "mm"),     # spacer between heatmaps (increase to create more separation)
-    unit(0.37, "npc")   # bottom heatmap
+    unit(0.3, "npc")   # bottom heatmap
   )
 )))
 
@@ -533,6 +533,164 @@ grid.text(
   "QuSAGE",
   x = unit(0.5, "npc"),
   y = unit(1, "npc") + unit(10, "mm"),
+  gp = gpar(fontsize = 32, fontface = "bold")
+)
+upViewport()
+
+dev.off()
+
+# Showing an example with a more relaxed sharing score threshold on QuSAGE
+
+ht1 = plot_heatmap(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  times = c(1, 3, 7, 10, 14, 21),
+  aggregates = levels(results_df$gs.aggregate)[-which(levels(results_df$gs.aggregate) == "NA")],
+  fixed_row_names_width = unit(150, units = "mm"),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  scores = "fc.score",
+  filter_mode = "none",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  y_order = "cluster",
+  x_order = "cluster",
+  filter_commonDE = "score",
+  common_proportion = 0,
+  score_threshold = 7,
+  quantile_scoreclip = 1,
+  legend_max = 1.5
+)
+
+ht2  = plot_heatmap(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  times = c(1, 3, 7, 10, 14, 21),
+  aggregates = levels(results_df$gs.aggregate)[-which(levels(results_df$gs.aggregate) == "NA")],
+  fixed_row_names_width = unit(150, units = "mm"),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  scores = "fc.score",
+  filter_mode = "none",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  y_order = "cluster",
+  x_order = "cluster",
+  filter_commonDE = "score",
+  common_proportion = 0,
+  score_threshold = 7,
+  quantile_scoreclip = 1,
+  legend_max = 1.5
+)
+
+figures_folder = fs::path("output", "figures", "dgsa")
+
+# Open PDF
+pdf(fs::path(figures_folder, "heatmap_comparison.pdf"), width = 20, height = 35)
+
+# 3-row layout: top heatmap / spacer / bottom heatmap
+pushViewport(viewport(layout = grid.layout(
+  nrow = 3,
+  ncol = 1,
+  heights = unit.c(
+    unit(0.4, "npc"),  # top heatmap
+    unit(30, "mm"),     # spacer between heatmaps (increase to create more separation)
+    unit(0.2, "npc")   # bottom heatmap
+  )
+)))
+
+# Draw top heatmap in row 1, then overlay title (inside same viewport)
+pushViewport(viewport(layout.pos.row = 1, layout.pos.col = 1))
+draw(
+  ht1,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  newpage = FALSE
+)
+# draw title on top of heatmap (tweak offset if needed)
+grid.text(
+  "dearseq",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),   # slightly below the very top of the viewport
+  gp = gpar(fontsize = 32, fontface = "bold")
+)
+upViewport()
+
+# spacer row is row 2 (nothing to draw)
+
+# Draw bottom heatmap in row 3, then overlay title (inside same viewport)
+pushViewport(viewport(layout.pos.row = 3, layout.pos.col = 1))
+draw(
+  ht2,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  newpage = FALSE
+)
+# draw title on top of bottom heatmap
+grid.text(
+  "QuSAGE",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),
+  gp = gpar(fontsize = 32, fontface = "bold")
+)
+upViewport()
+
+dev.off()
+
+# Save individual plots
+
+# Open PDF
+pdf(fs::path(figures_folder, "heatmap_dearseq.pdf"), width = 28, height = 15)
+
+# 3-row layout: top heatmap / spacer / bottom heatmap
+pushViewport(viewport(layout = grid.layout(
+  nrow = 1,
+  ncol = 1
+)))
+
+# Draw top heatmap in row 1, then overlay title (inside same viewport)
+pushViewport(viewport(layout.pos.row = 1, layout.pos.col = 1))
+draw(
+  ht1,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  newpage = FALSE
+)
+# draw title on top of heatmap (tweak offset if needed)
+grid.text(
+  "dearseq",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),   # slightly below the very top of the viewport
+  gp = gpar(fontsize = 32, fontface = "bold")
+)
+upViewport()
+
+dev.off()
+
+# Open PDF
+pdf(fs::path(figures_folder, "heatmap_qusage.pdf"), width = 22.5, height = 10)
+
+# 3-row layout: top heatmap / spacer / bottom heatmap
+pushViewport(viewport(layout = grid.layout(
+  nrow = 1,
+  ncol = 1
+)))
+
+# Draw top heatmap in row 1, then overlay title (inside same viewport)
+pushViewport(viewport(layout.pos.row = 1, layout.pos.col = 1))
+draw(
+  ht2,
+  heatmap_legend_side = "right",
+  annotation_legend_side = "right",
+  newpage = FALSE
+)
+# draw title on top of heatmap (tweak offset if needed)
+grid.text(
+  "dearseq",
+  x = unit(0.5, "npc"),
+  y = unit(1, "npc") + unit(10, "mm"),   # slightly below the very top of the viewport
   gp = gpar(fontsize = 32, fontface = "bold")
 )
 upViewport()

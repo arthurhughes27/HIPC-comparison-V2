@@ -20,6 +20,80 @@ p_load_expr_all_norm <- fs::path(processed_data_folder, "hipc_merged_all_norm.rd
 # Load merged gene-level data
 hipc_merged_all_norm = readRDS(p_load_expr_all_norm)
 
+# Counts per vaccine x time
+counts <- hipc_merged_all_norm %>%
+  filter(!is.na(time_post_last_vax)) %>%
+  group_by(vaccine_name, vaccine_colour, time_post_last_vax) %>%
+  summarise(n = n(), .groups = "drop")
+
+# Order the time points and make time_post_last_vax an ordered factor
+time_levels <- counts %>%
+  distinct(time_post_last_vax) %>%
+  arrange(as.numeric(time_post_last_vax)) %>%
+  pull(time_post_last_vax) %>%
+  as.character()   # factor levels must be character
+
+# Order the counts by the study time
+counts <- counts %>%
+  mutate(time_post_last_vax = factor(
+    as.character(time_post_last_vax),
+    levels = time_levels,
+    ordered = TRUE
+  ))
+
+# Since the range of the number of samples is large, we make the bubble size proportional to the count/square root of count
+counts <- counts %>%
+  mutate(size_var = n / sqrt(n))
+
+# Bubble plot
+p1 <- ggplot(counts, aes(x = time_post_last_vax, y = vaccine_name)) +
+  # points coloured by vaccine hex codes; shape 21 allows fill + black border
+  geom_point(
+    aes(size = size_var, fill = vaccine_colour),
+    shape = 21,
+    colour = "black",
+    alpha = 0.95,
+    show.legend = FALSE
+  ) +
+  # numeric labels inside bubbles; label shows raw counts n and is white
+  geom_text(
+    aes(label = n),
+    colour = "white",
+    size = 3.5,
+    vjust = 0.5,
+    show.legend = FALSE
+  ) +
+  scale_fill_identity(guide = "none") +     # use hex codes directly, no fill legend
+  scale_size_area(max_size = 28, guide = "none") +
+  labs(
+    x = "Days post-vaccination",
+    y = "Vaccine",
+    title = "Number of participants with transcriptomic samples at each timepoint",
+    subtitle = "All timepoints, all vaccines"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.major.y = element_line(color = "grey90"),
+    panel.grid.minor = element_blank(),
+    axis.title = element_text(size = 14),
+    axis.text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 18, hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(size = 15, hjust = 0.5)
+  )
+
+print(p1)
+
+ggsave(
+  filename = "bubble_plot_sequential.pdf",
+  path = descriptive_figures_folder,
+  plot = p1,
+  width = 40,
+  height = 26,
+  units = "cm"
+)
+
+
 # Filter out observations which do not have an immune response value
 hipc_merged_all_norm_response = hipc_merged_all_norm %>%
   filter(!is.na(immResp_MFC_anyAssay_log2_MFC))
@@ -89,7 +163,7 @@ p1 <- ggplot(counts, aes(x = study_time_collected, y = vaccine_name)) +
 print(p1)
 
 ggsave(
-  filename = "bubble_plot_sequential.pdf",
+  filename = "bubble_plot_sequential_prediction.pdf",
   path = descriptive_figures_folder,
   plot = p1,
   width = 40,

@@ -647,3 +647,38 @@ ggsave(
   height = 35,
   dpi = 300
 )
+
+# Plot individual figures
+
+ggsave(
+  fs::path(
+    figures_folder,
+    paste0("indiv_sensitivity_dgsamethod_day", day, ".pdf")
+  ),
+  p1,
+  width = 25,
+  height = 15,
+  dpi = 300
+)
+
+ggsave(
+  fs::path(
+    figures_folder,
+    paste0("indiv_sensitivity_pthreshold_day", day, ".pdf")
+  ),
+  p2,
+  width = 25,
+  height = 15,
+  dpi = 300
+)
+
+ggsave(
+  fs::path(
+    figures_folder,
+    paste0("indiv_sensitivity_fcthreshold_day", day, ".pdf")
+  ),
+  p3,
+  width = 25,
+  height = 15,
+  dpi = 300
+)
