@@ -396,15 +396,15 @@ cumulative_prediction_function = function(prediction_set_list,
 # Now we need to apply this function to all of our vaccines and cumulative predictor sets
 
 # prepare a results list with the same structure as the predictor set list
-prediction_results_all_cumulative_withClinical_withTBA <- vector("list", length(cumulative_prediction_sets))
-names(prediction_results_all_cumulative_withClinical_withTBA) <- names(cumulative_prediction_sets)
+prediction_results_all_cumulative_withClinical_withTBA_ranger <- vector("list", length(cumulative_prediction_sets))
+names(prediction_results_all_cumulative_withClinical_withTBA_ranger) <- names(cumulative_prediction_sets)
 
 # For each vaccine
 for (vac in names(cumulative_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
   set_names <- names(cumulative_prediction_sets[[vac]])
-  prediction_results_all_cumulative_withClinical_withTBA[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_cumulative_withClinical_withTBA[[vac]]) <- set_names
+  prediction_results_all_cumulative_withClinical_withTBA_ranger[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_cumulative_withClinical_withTBA_ranger[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -427,33 +427,33 @@ for (vac in names(cumulative_prediction_sets)) {
       )
     
     # store the result
-    prediction_results_all_cumulative_withClinical_withTBA[[vac]][[set_name]] <- res
+    prediction_results_all_cumulative_withClinical_withTBA_ranger[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
+p_prediction_results_all_cumulative_withClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_cumulative_withClinical_withTBA.rds"
+  "prediction_results_all_cumulative_withClinical_withTBA_ranger.rds"
 )
 
-saveRDS(prediction_results_all_cumulative_withClinical_withTBA,
-        file = p_prediction_results_all_cumulative_withClinical_withTBA)
+saveRDS(prediction_results_all_cumulative_withClinical_withTBA_ranger,
+        file = p_prediction_results_all_cumulative_withClinical_withTBA_ranger)
 
 # Do the same prediction task but remove clinical variables from the prediction
 
-prediction_results_all_cumulative_withoutClinical_withTBA <- vector("list", length(cumulative_prediction_sets))
-names(prediction_results_all_cumulative_withoutClinical_withTBA) <- names(cumulative_prediction_sets)
+prediction_results_all_cumulative_withoutClinical_withTBA_ranger <- vector("list", length(cumulative_prediction_sets))
+names(prediction_results_all_cumulative_withoutClinical_withTBA_ranger) <- names(cumulative_prediction_sets)
 # For each vaccine
 for (vac in names(cumulative_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
   set_names <- names(cumulative_prediction_sets[[vac]])[-1]
-  prediction_results_all_cumulative_withoutClinical_withTBA[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_cumulative_withoutClinical_withTBA[[vac]]) <- set_names
+  prediction_results_all_cumulative_withoutClinical_withTBA_ranger[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_cumulative_withoutClinical_withTBA_ranger[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -476,22 +476,22 @@ for (vac in names(cumulative_prediction_sets)) {
       )
     
     # store the result
-    prediction_results_all_cumulative_withoutClinical_withTBA[[vac]][[set_name]] <- res
+    prediction_results_all_cumulative_withoutClinical_withTBA_ranger[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
+p_prediction_results_all_cumulative_withoutClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
+  "prediction_results_all_cumulative_withoutClinical_withTBA_ranger.rds"
 )
 
-saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA,
-        file = p_prediction_results_all_cumulative_withoutClinical_withTBA)
+saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA_ranger,
+        file = p_prediction_results_all_cumulative_withoutClinical_withTBA_ranger)
 
 #-------------------------------
 # Plot results
@@ -499,17 +499,17 @@ saveRDS(prediction_results_all_cumulative_withoutClinical_withTBA,
 
 # Load the 'with clinical' results
 
-p_prediction_results_all_cumulative_withClinical_withTBA = fs::path(
+p_prediction_results_all_cumulative_withClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_cumulative_withClinical_withTBA.rds"
+  "prediction_results_all_cumulative_withClinical_withTBA_ranger.rds"
 )
 
-prediction_results_all_cumulative_withClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withClinical_withTBA)
+prediction_results_all_cumulative_withClinical_withTBA_ranger = readRDS(p_prediction_results_all_cumulative_withClinical_withTBA_ranger)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_cumulative_withClinical_withTBA)
+vaccines <- names(prediction_results_all_cumulative_withClinical_withTBA_ranger)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("clinical", "Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14")
@@ -529,9 +529,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_cumulative_withClinical_withTBA[[vac]]))
+  if (is.null(prediction_results_all_cumulative_withClinical_withTBA_ranger[[vac]]))
     next
-  res_set <- prediction_results_all_cumulative_withClinical_withTBA[[vac]][[setn]]
+  res_set <- prediction_results_all_cumulative_withClinical_withTBA_ranger[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -586,7 +586,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
   labs(x = "Predictor set",
        y = "Vaccine",
        title = expression(paste(
-         "Spearman ", rho, " by vaccine and predictor set"
+         "Spearman ", rho, " by vaccine and predictor set - Random Forest"
        ))) +
   theme_minimal(base_size = 20) +
   theme(
@@ -616,7 +616,7 @@ heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set - Random Forest") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -626,7 +626,7 @@ heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
 # Print sRMSE heatmap
 print(heatmap_plot_sRMSE)
 
-title = expression(paste("Spearman ", rho, " by vaccine and predictor set"))
+title = expression(paste("Spearman ", rho, " by vaccine and predictor set - Random Forest"))
 
 # --- Modify heatmap plots ---
 heatmap_plot_R_mod <- heatmap_plot_R +
@@ -673,7 +673,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
     guides = "collect"   # collect legends into one
   ) +
   plot_annotation(
-    title = "Evaluation metrics of CV predictions",
+    title = "Evaluation metrics of CV predictions - Random Forest",
     subtitle = "Cumulative prediction set approach, clinical variables included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
@@ -690,7 +690,7 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_cumulative_withClinical_withTBA.pdf",
+  filename = "evaluation_combined_cumulative_withClinical_withTBA_ranger.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,
@@ -702,17 +702,17 @@ ggsave(
 
 # Load the 'without clinical' results
 
-p_prediction_results_all_cumulative_withoutClinical_withTBA = fs::path(
+p_prediction_results_all_cumulative_withoutClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_cumulative_withoutClinical_withTBA.rds"
+  "prediction_results_all_cumulative_withoutClinical_withTBA_ranger.rds"
 )
 
-prediction_results_all_cumulative_withoutClinical_withTBA = readRDS(p_prediction_results_all_cumulative_withoutClinical_withTBA)
+prediction_results_all_cumulative_withoutClinical_withTBA_ranger = readRDS(p_prediction_results_all_cumulative_withoutClinical_withTBA_ranger)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_cumulative_withoutClinical_withTBA)
+vaccines <- names(prediction_results_all_cumulative_withoutClinical_withTBA_ranger)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14")
@@ -732,9 +732,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_cumulative_withoutClinical_withTBA[[vac]]))
+  if (is.null(prediction_results_all_cumulative_withoutClinical_withTBA_ranger[[vac]]))
     next
-  res_set <- prediction_results_all_cumulative_withoutClinical_withTBA[[vac]][[setn]]
+  res_set <- prediction_results_all_cumulative_withoutClinical_withTBA_ranger[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -789,7 +789,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
   labs(x = "Predictor set",
        y = "Vaccine",
        title = expression(paste(
-         "Spearman ", rho, " by vaccine and predictor set"
+         "Spearman ", rho, " by vaccine and predictor set - Random Forest"
        ))) +
   theme_minimal(base_size = 20) +
   theme(
@@ -820,7 +820,7 @@ heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set - Random Forest") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -876,7 +876,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
     guides = "collect"   # collect legends into one
   ) +
   plot_annotation(
-    title = "Evaluation metrics of CV predictions",
+    title = "Evaluation metrics of CV predictions - Random Forest",
     subtitle = "Cumulative prediction set approach, clinical variables not included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
@@ -893,7 +893,7 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_cumulative_withoutClinical_withTBA.pdf",
+  filename = "evaluation_combined_cumulative_withoutClinical_withTBA_ranger.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,

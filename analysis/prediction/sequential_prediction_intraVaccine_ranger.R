@@ -589,7 +589,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
   labs(x = "Predictor set",
        y = "Vaccine",
        title = expression(paste(
-         "Spearman ", rho, " by vaccine and predictor set"
+         "Spearman ", rho, " by vaccine and predictor set - Random Forest"
        ))) +
   theme_minimal(base_size = 20) +
   theme(
@@ -618,7 +618,7 @@ heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set - Random Forest") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -674,7 +674,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
     guides = "collect"   # collect legends into one
   ) +
   plot_annotation(
-    title = "Evaluation metrics of CV predictions",
+    title = "Evaluation metrics of CV predictions - Random Forest",
     subtitle = "Sequential prediction set approach, clinical variables included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
