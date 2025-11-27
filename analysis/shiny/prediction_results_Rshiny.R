@@ -104,6 +104,11 @@ include_clinical_set = c(
 
 include_tba_set = c("Include TBA" = "withTBA", "Exclude TBA" = "withoutTBA")
 
+highlight_best_set = c("No highlighting" = "none",
+                       "Spearman Correlation" = "spearman",
+                       "Standardised RMSE" = "sRMSE",
+                       "sRMSE + (1-Spearman)" = "combined")
+
 ### CV PREDICTIONS TAB ###
 
 vaccine_set = names(prediction_results_all_sequential_withoutClinical_withTBA)
@@ -448,8 +453,29 @@ ui <- fluidPage(
               title   = "Include modules without labels as predictors?",
               placement = "right",
               trigger   = "hover"
-            )
+            ),
+          
+          # Highlight best predictor set?
+          tags$label(
+            "Highlight best predictor set?",
+            tags$span(icon("info-circle"), 
+                      id  = "cv_predictions_highlight_best_info",
+                      style = "cursor: help; color: #337ab7; margin-left: 4px;")
           ),
+          selectInput(
+            inputId = "cv_predictions_highlight_best",
+            label   = NULL,
+            choices = highlight_best_set,
+            selected = highlight_best_set[1],
+            multiple = FALSE
+          ),
+          bsTooltip(
+            id      = "cv_predictions_highlight_best_info",
+            title   = "Highlight the best set of predictors?",
+            placement = "right",
+            trigger   = "hover"
+          )
+        ),
           # close wellPanel
           
           # ---------- Download section ----------
@@ -703,8 +729,9 @@ input$results_comparison_feature_set = feature_set_set
 input$cv_predictions_approach = "sequential"
 input$cv_predictions_include_clinical = "withClinical"
 input$cv_predictions_vaccine = "Yellow Fever (LV)"
-input$cv_predictions_feature_set = c("Day 0")
+input$cv_predictions_feature_set = c("clinical", "Day 0", "Day 3", "Day 7", "Day 14")
 input$cv_predictions_include_tba = "withoutTBA"
+input$cv_predictions_highlight_best = "combined"
 
 input$variable_importance_approach = "sequential"
 input$variable_importance_include_clinical = "withClinical"
@@ -1108,6 +1135,40 @@ server <- function(input, output, session) {
       } else if (length(input$cv_predictions_feature_set) > 1) {
         # MULTIPLE FEATURE SETS CASE
         
+        selected_results_vaccine <- selected_results[[input$cv_predictions_vaccine]]
+        # Extract metrics for selected timepoints
+        selected_results_vaccine_feature_set_filtered = selected_results_vaccine[input$cv_predictions_feature_set]
+        # Compute the combined metric for each set
+        
+        if (input$cv_predictions_highlight_best == "none"){
+          best_set = "none"
+        } else if (input$cv_predictions_highlight_best == "spearman"){
+          set_metrics <- sapply(input$cv_predictions_feature_set, function(set) {
+            res <- selected_results_vaccine_feature_set_filtered[[set]]
+            1 - res[["metrics"]][["Rspearman"]]
+          })
+          
+          # Identify the set with the minimum value
+          best_set <- names(which.min(set_metrics))
+        } else if (input$cv_predictions_highlight_best == "sRMSE"){
+          set_metrics <- sapply(input$cv_predictions_feature_set, function(set) {
+            res <- selected_results_vaccine_feature_set_filtered[[set]]
+            res[["metrics"]][["sRMSE"]]
+          })
+          
+          # Identify the set with the minimum value
+          best_set <- names(which.min(set_metrics))
+        } else if (input$cv_predictions_highlight_best == "combined"){
+          set_metrics <- sapply(input$cv_predictions_feature_set, function(set) {
+            res <- selected_results_vaccine_feature_set_filtered[[set]]
+            res[["metrics"]][["sRMSE"]] + (1 - res[["metrics"]][["Rspearman"]])
+          })
+          
+          # Identify the set with the minimum value
+          best_set <- names(which.min(set_metrics))
+        }
+        
+        #jump
         day_sets <- input$cv_predictions_feature_set[grepl("^Day\\s*[0-9]+$", input$cv_predictions_feature_set)]
         day_nums <- as.numeric(sub("Day\\s*", "", day_sets))
         
@@ -1142,7 +1203,9 @@ server <- function(input, output, session) {
         # top row: feature set headers
         for (j in seq_len(n_col)) {
           h <- textGrob(
-            label = sorted_feature_sets[j],
+            label = paste0(sorted_feature_sets[j], " (n = ",
+                           nrow(selected_results_vaccine_feature_set_filtered[[j]][["cv_results"]]) 
+                           ,")"),
             gp = gpar(fontsize = 16, fontface = "bold"),
             just = "center"
           )
@@ -1152,6 +1215,9 @@ server <- function(input, output, session) {
         # bottom row: the plots (with panel border inside each plot); blanks if missing
         for (j in seq_len(n_col)) {
           feat <- sorted_feature_sets[j]
+          
+          is_best <- identical(feat, best_set)
+          
           got_plot <- NULL
           
           if (!is.null(selected_results[[input$cv_predictions_vaccine]]) &&
@@ -1187,6 +1253,12 @@ server <- function(input, output, session) {
               }
             }
             
+            # choose border appearance depending on whether this is the best set
+            panel_border_col <-  "grey70"
+            panel_border_size <- 0.8
+            plot_bg_col <- if (is_best) "#5DC53B" else NA
+            plot_bg_size <- if (is_best) 1.5 else 0
+            
             # apply compact theme and panel border
             p_mod <- p_mod +
               theme(
@@ -1198,11 +1270,16 @@ server <- function(input, output, session) {
                 axis.text.x = element_text(size = 7),
                 axis.text.y = element_text(size = 7),
                 panel.border = element_rect(
-                  colour = "grey70",
+                  colour = panel_border_col,
                   fill = NA,
-                  size = 0.8
+                  size = panel_border_size
                 ),
-                panel.background = element_rect(fill = "white", colour = NA)
+                panel.background = element_rect(fill = "white", colour = NA),
+                plot.background = element_rect(
+                  fill = "white",
+                  colour = plot_bg_col,
+                  size = plot_bg_size
+                )
               )
             
             grob_list[[n_col + j]] <- ggplotGrob(p_mod) # second row index = n_col + j
