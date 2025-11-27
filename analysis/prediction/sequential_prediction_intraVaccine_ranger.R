@@ -1,4 +1,4 @@
-# A script to perform within-vaccine predictions based on sequential transcriptomics data over time without including TBA modules
+# A script to perform within-vaccine predictions based on sequential transcriptomics data over time
 # The vaccines were selected based on number of available samples and heterogeneity in immune response
 # The timepoints were selected per-vaccine based on the number of available samples
 # The justification for these decisions can be found in the files analysis/transcriptomic_sample_descriptions.R
@@ -25,11 +25,11 @@ processed_data_folder = "data"
 prediction_figures_folder = fs::path("output", "figures", "prediction")
 
 # Path to sequential prediction sets list
-p_load_sequential_prediction_sets_withoutTBA <- fs::path(processed_data_folder,
-                                                         "sequential_prediction_sets_list_withoutTBA.rds")
+p_load_sequential_prediction_sets <- fs::path(processed_data_folder,
+                                              "sequential_prediction_sets_list.rds")
 
 # Load sequential prediction sets list
-sequential_prediction_sets_withoutTBA = readRDS(p_load_sequential_prediction_sets_withoutTBA)
+sequential_prediction_sets = readRDS(p_load_sequential_prediction_sets)
 
 # Assign each prediction set a colour code for later visualisation
 prediction_set_colours = list(
@@ -399,15 +399,15 @@ sequential_prediction_function = function(prediction_set_list,
 # Now we need to apply this function to all of our vaccines and sequential predictor sets
 
 # prepare a results list with the same structure as the predictor set list
-prediction_results_all_sequential_withClinical_withoutTBA <- vector("list", length(sequential_prediction_sets_withoutTBA))
-names(prediction_results_all_sequential_withClinical_withoutTBA) <- names(sequential_prediction_sets_withoutTBA)
+prediction_results_all_sequential_withClinical_withTBA_ranger <- vector("list", length(sequential_prediction_sets))
+names(prediction_results_all_sequential_withClinical_withTBA_ranger) <- names(sequential_prediction_sets)
 
 # For each vaccine
-for (vac in names(sequential_prediction_sets_withoutTBA)) {
+for (vac in names(sequential_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
-  set_names <- names(sequential_prediction_sets_withoutTBA[[vac]])
-  prediction_results_all_sequential_withClinical_withoutTBA[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_sequential_withClinical_withoutTBA[[vac]]) <- set_names
+  set_names <- names(sequential_prediction_sets[[vac]])
+  prediction_results_all_sequential_withClinical_withTBA_ranger[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_sequential_withClinical_withTBA_ranger[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -416,7 +416,7 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
     # Run prediction function
     res <-
       sequential_prediction_function(
-        prediction_set_list = sequential_prediction_sets_withoutTBA,
+        prediction_set_list = sequential_prediction_sets,
         vaccine = vac,
         set_name = set_name,
         n_outer = 10,
@@ -430,33 +430,33 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
       )
     
     # store the result
-    prediction_results_all_sequential_withClinical_withoutTBA[[vac]][[set_name]] <- res
+    prediction_results_all_sequential_withClinical_withTBA_ranger[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
+p_prediction_results_all_sequential_withClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_sequential_withClinical_withoutTBA.rds"
+  "prediction_results_all_sequential_withClinical_withTBA_ranger.rds"
 )
 
-saveRDS(prediction_results_all_sequential_withClinical_withoutTBA,
-        file = p_prediction_results_all_sequential_withClinical_withoutTBA)
+saveRDS(prediction_results_all_sequential_withClinical_withTBA_ranger,
+        file = p_prediction_results_all_sequential_withClinical_withTBA_ranger)
 
 # Do the same prediction task but remove clinical variables from the prediction
 
-prediction_results_all_sequential_withoutClinical_withoutTBA <- vector("list", length(sequential_prediction_sets_withoutTBA))
-names(prediction_results_all_sequential_withoutClinical_withoutTBA) <- names(sequential_prediction_sets_withoutTBA)
+prediction_results_all_sequential_withoutClinical_withTBA_ranger <- vector("list", length(sequential_prediction_sets))
+names(prediction_results_all_sequential_withoutClinical_withTBA_ranger) <- names(sequential_prediction_sets)
 # For each vaccine
-for (vac in names(sequential_prediction_sets_withoutTBA)) {
+for (vac in names(sequential_prediction_sets)) {
   # initialize inner list with same names as the predictor-sets for this vaccine
-  set_names <- names(sequential_prediction_sets_withoutTBA[[vac]])[-1]
-  prediction_results_all_sequential_withoutClinical_withoutTBA[[vac]] <- vector("list", length(set_names))
-  names(prediction_results_all_sequential_withoutClinical_withoutTBA[[vac]]) <- set_names
+  set_names <- names(sequential_prediction_sets[[vac]])[-1]
+  prediction_results_all_sequential_withoutClinical_withTBA_ranger[[vac]] <- vector("list", length(set_names))
+  names(prediction_results_all_sequential_withoutClinical_withTBA_ranger[[vac]]) <- set_names
   
   # For each predictor set
   for (set_name in set_names) {
@@ -465,7 +465,7 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
     # Run prediction function
     res <-
       sequential_prediction_function(
-        prediction_set_list = sequential_prediction_sets_withoutTBA,
+        prediction_set_list = sequential_prediction_sets,
         vaccine = vac,
         set_name = set_name,
         n_outer = 10,
@@ -479,22 +479,22 @@ for (vac in names(sequential_prediction_sets_withoutTBA)) {
       )
     
     # store the result
-    prediction_results_all_sequential_withoutClinical_withoutTBA[[vac]][[set_name]] <- res
+    prediction_results_all_sequential_withoutClinical_withTBA_ranger[[vac]][[set_name]] <- res
     
     gc()
   }
 }
 
 # Save these results
-p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
+p_prediction_results_all_sequential_withoutClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
+  "prediction_results_all_sequential_withoutClinical_withTBA_ranger.rds"
 )
 
-saveRDS(prediction_results_all_sequential_withoutClinical_withoutTBA,
-        file = p_prediction_results_all_sequential_withoutClinical_withoutTBA)
+saveRDS(prediction_results_all_sequential_withoutClinical_withTBA_ranger,
+        file = p_prediction_results_all_sequential_withoutClinical_withTBA_ranger)
 
 #-------------------------------
 # Plot results
@@ -502,17 +502,17 @@ saveRDS(prediction_results_all_sequential_withoutClinical_withoutTBA,
 
 # Load the 'with clinical' results
 
-p_prediction_results_all_sequential_withClinical_withoutTBA = fs::path(
+p_prediction_results_all_sequential_withClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_sequential_withClinical_withoutTBA.rds"
+  "prediction_results_all_sequential_withClinical_withTBA_ranger.rds"
 )
 
-prediction_results_all_sequential_withClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withClinical_withoutTBA)
+prediction_results_all_sequential_withClinical_withTBA_ranger = readRDS(p_prediction_results_all_sequential_withClinical_withTBA_ranger)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_sequential_withClinical_withoutTBA)
+vaccines <- names(prediction_results_all_sequential_withClinical_withTBA_ranger)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("clinical", "Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14")
@@ -532,9 +532,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_sequential_withClinical_withoutTBA[[vac]]))
+  if (is.null(prediction_results_all_sequential_withClinical_withTBA_ranger[[vac]]))
     next
-  res_set <- prediction_results_all_sequential_withClinical_withoutTBA[[vac]][[setn]]
+  res_set <- prediction_results_all_sequential_withClinical_withTBA_ranger[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -691,7 +691,7 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_sequential_withClinical_withoutTBA.pdf",
+  filename = "evaluation_combined_sequential_withClinical_withTBA_ranger.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,
@@ -703,17 +703,17 @@ ggsave(
 
 # Load the 'without clinical' results
 
-p_prediction_results_all_sequential_withoutClinical_withoutTBA = fs::path(
+p_prediction_results_all_sequential_withoutClinical_withTBA_ranger = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_all_sequential_withoutClinical_withoutTBA.rds"
+  "prediction_results_all_sequential_withoutClinical_withTBA_ranger.rds"
 )
 
-prediction_results_all_sequential_withoutClinical_withoutTBA = readRDS(p_prediction_results_all_sequential_withoutClinical_withoutTBA)
+prediction_results_all_sequential_withoutClinical_withTBA_ranger = readRDS(p_prediction_results_all_sequential_withoutClinical_withTBA_ranger)
 
 # --- 1. Build vaccine x set grid and extract Rspearman + sRMSE in one pass ----
-vaccines <- names(prediction_results_all_sequential_withoutClinical_withoutTBA)
+vaccines <- names(prediction_results_all_sequential_withoutClinical_withTBA_ranger)
 
 # gather all predictor-set names that appear anywhere
 all_sets <- c("Day 0", "Day 1", "Day 3", "Day 7", "Day 10", "Day 14")
@@ -733,9 +733,9 @@ for (i in seq_len(n)) {
   vac  <- grid$vaccine[i]
   setn <- grid$set[i]
   # guard against missing vaccine or set
-  if (is.null(prediction_results_all_sequential_withoutClinical_withoutTBA[[vac]]))
+  if (is.null(prediction_results_all_sequential_withoutClinical_withTBA_ranger[[vac]]))
     next
-  res_set <- prediction_results_all_sequential_withoutClinical_withoutTBA[[vac]][[setn]]
+  res_set <- prediction_results_all_sequential_withoutClinical_withTBA_ranger[[vac]][[setn]]
   if (is.null(res_set) || !is.list(res_set))
     next
   if (!("metrics" %in% names(res_set)))
@@ -790,7 +790,7 @@ heatmap_plot_R <- ggplot(plot_df, aes(x = set, y = vaccine, fill = Rs)) +
   labs(x = "Predictor set",
        y = "Vaccine",
        title = expression(paste(
-         "Spearman ", rho, " by vaccine and predictor set"
+         "Spearman ", rho, " by vaccine and predictor set - Random Forest"
        ))) +
   theme_minimal(base_size = 20) +
   theme(
@@ -821,7 +821,7 @@ heatmap_plot_sRMSE <- ggplot(plot_df, aes(x = set, y = vaccine, fill = sRMSE)) +
     breaks = seq(0, 1, by = 0.25)
   ) +
   coord_fixed(ratio = 1) +   # square tiles
-  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set") +
+  labs(x = "Predictor set", y = "Vaccine", title = "Standardised RMSE by vaccine and predictor set - Random Forest") +
   theme_minimal(base_size = 20) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
@@ -877,7 +877,7 @@ combined <- heatmap_plot_R_mod / heatmap_plot_sRMSE_mod +
     guides = "collect"   # collect legends into one
   ) +
   plot_annotation(
-    title = "Evaluation metrics of CV predictions",
+    title = "Evaluation metrics of CV predictions - Random Forest",
     subtitle = "Sequential prediction set approach, clinical variables not included",
     theme = theme(
       plot.title = element_text(size = 26, face = "bold", hjust = 0.5),
@@ -894,16 +894,10 @@ print(combined)
 
 # --- Save figure ---
 ggsave(
-  filename = "evaluation_combined_sequential_withoutClinical_withoutTBA.pdf",
+  filename = "evaluation_combined_sequential_withoutClinical_withTBA_ranger.pdf",
   path = prediction_figures_folder,
   plot = combined,
   width = 40,
   height = 25,
   units = "cm"
 )
-
-
-
-# CUSTOM RESULTS REPRESENTATIONS #
-## Here, we make custom figures for selected results ##
-# First, load the desired results
