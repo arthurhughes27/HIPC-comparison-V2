@@ -32,13 +32,13 @@ gene_names = hipc_merged_all_norm_filtered %>%
   dplyr::select(a1cf:zzz3) %>% 
   colnames()
 
-# df = hipc_merged_all_norm_filtered
-# genesets = BTM[["genesets"]]
-# geneset_names = BTM[["geneset.names.descriptions"]]
-# id_col = "participant_id"
-# time_col = "study_time_collected"
-# transformation = "ssgsea"
-# timepoint = 7
+df = hipc_merged_all_norm_filtered
+genesets = BTM[["genesets"]]
+geneset_names = BTM[["geneset.names.descriptions"]]
+id_col = "participant_id"
+time_col = "study_time_collected"
+transformation = "max-z"
+timepoint = 7
 
 compute_geneset_baseline_transformation <- function(df,
                                                     genesets,
@@ -48,6 +48,9 @@ compute_geneset_baseline_transformation <- function(df,
                                                     transformation = c("mean",
                                                                        "median",
                                                                        "max",
+                                                                       "mean-z",
+                                                                       "median-z",
+                                                                       "max-z",
                                                                        "mean-rank",
                                                                        "median-rank",
                                                                        "max-rank",
@@ -72,6 +75,8 @@ compute_geneset_baseline_transformation <- function(df,
     col_transformation <- "pc1"
   } else if ("ssgsea" %in% split_strings) {
     col_transformation <- "ssgsea"
+  } else if ("z" %in% split_strings){
+    col_transformation = "z"
   } else {
     col_transformation <- NA
   }
@@ -163,6 +168,9 @@ compute_geneset_baseline_transformation <- function(df,
         pca_res <- stats::prcomp(bl_mat_filtered, center = TRUE, scale. = TRUE)
         aggregated <- as.numeric(pca_res$x[, 1])
       }
+    } else if (col_transformation == "z") {
+      col_z <- apply(bl_mat_filtered, 2, function(col) scale(col, center = T, scale = T))
+      aggregated <- apply(col_z, MARGIN = 1, FUN = row_transformation)
     }
     
     result[[out_colnames[i]]] <- as.numeric(aggregated)
@@ -184,6 +192,9 @@ compute_geneset_postvax_fc_transformation <- function(df,
                                                       transformation = c("mean",
                                                                          "median",
                                                                          "max",
+                                                                         "mean-z",
+                                                                         "median-z",
+                                                                         "max-z",
                                                                          "mean-rank",
                                                                          "median-rank",
                                                                          "max-rank",
@@ -208,6 +219,8 @@ compute_geneset_postvax_fc_transformation <- function(df,
     col_transformation <- "pc1"
   } else if ("ssgsea" %in% split_strings) {
     col_transformation <- "ssgsea"
+  } else if ("z" %in% split_strings){
+    col_transformation = "z"
   } else {
     col_transformation <- NA
   }
@@ -320,6 +333,9 @@ compute_geneset_postvax_fc_transformation <- function(df,
         pca_res <- stats::prcomp(diff_mat_filtered, center = TRUE, scale. = TRUE)
         aggregated <- as.numeric(pca_res$x[, 1])
       }
+    } else if (col_transformation == "z") {
+      col_z <- apply(diff_mat_filtered, 2, function(col) scale(col, center = T, scale = T))
+      aggregated <- apply(col_z, MARGIN = 1, FUN = row_transformation)
     }
     
     result[[out_colnames[i]]] <- as.numeric(aggregated)
@@ -333,8 +349,11 @@ compute_geneset_postvax_fc_transformation <- function(df,
 # Now we can calculate geneset-level features for each timepoint of interest
 
 transformations_of_interest = c("mean",
-                                "median" ,
+                                "median",
                                 "max",
+                                "mean-z",
+                                "median-z",
+                                "max-z",
                                 "mean-rank",
                                 "median-rank",
                                 "max-rank",
@@ -522,11 +541,6 @@ p_save_cumulative_list_influenzain_withTBA <- fs::path(processed_data_folder, "c
 saveRDS(sequential_list, p_save_sequential_list_influenzain_withTBA)
 saveRDS(cumulative_list, p_save_cumulative_list_influenzain_withTBA)
 
-
-
-
-
-
 # Now we do the same but for predictor sets without TBA modules 
 # Reload genesets
 BTM_withoutTBA = readRDS(p_load_btm)
@@ -540,8 +554,11 @@ BTM_withoutTBA[["geneset.aggregates"]] = BTM_withoutTBA[["geneset.aggregates"]][
 BTM_withoutTBA[["geneset.names.descriptions"]] = BTM_withoutTBA[["geneset.names.descriptions"]][-idx]
 
 transformations_of_interest = c("mean",
-                                "median" ,
+                                "median",
                                 "max",
+                                "mean-z",
+                                "median-z",
+                                "max-z",
                                 "mean-rank",
                                 "median-rank",
                                 "max-rank",

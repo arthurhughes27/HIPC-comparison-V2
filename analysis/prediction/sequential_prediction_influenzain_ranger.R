@@ -26,18 +26,18 @@ prediction_figures_folder = fs::path("output", "figures", "prediction")
 
 # Paths of transformed data
 ## With TBA modules
-# p_load_sequential_list_yellowfeverlv_withTBA = fs::path(processed_data_folder,
-#                                                            "sequential_list_yellowfeverlv_withTBA.rds")
+# p_load_sequential_list_influenzain_withTBA = fs::path(processed_data_folder,
+#                                                            "sequential_list_influenzain_withTBA.rds")
 
 ## Without TBA modules
-p_load_sequential_list_yellowfeverlv_withoutTBA = fs::path(processed_data_folder,
-                                                        "sequential_list_yellowfeverlv_withoutTBA.rds")
+p_load_sequential_list_influenzain_withoutTBA = fs::path(processed_data_folder,
+                                                           "sequential_list_influenzain_withoutTBA.rds")
 
 
 
 # Load sequential prediction sets lists
-# sequential_list_yellowfeverlv_withTBA = readRDS(p_load_sequential_list_yellowfeverlv_withTBA)
-sequential_prediction_sets = readRDS(p_load_sequential_list_yellowfeverlv_withoutTBA)
+# sequential_list_influenzain_withTBA = readRDS(p_load_sequential_list_influenzain_withTBA)
+sequential_prediction_sets = readRDS(p_load_sequential_list_influenzain_withoutTBA)
 
 # Assign each prediction set a colour code for later visualisation
 prediction_set_colours = list(
@@ -54,7 +54,7 @@ prediction_set_colours = list(
 # Write a function to perform prediction for a given vaccine with information sequential at a given timepoint
 sequential_prediction_function = function(prediction_set_list,
                                           set_name = "clinical",
-                                          transformation = c("mean", "median", "max", "mean-z", "median-z", "max-z", "mean-rank", "median-rank", "max-rank", "ssgsea"),
+                                          transformation = c("mean", "median", "max", "mean-z", "median-z", "max-z","mean-rank", "median-rank", "max-rank", "ssgsea"),
                                           n_outer,
                                           n_inner,
                                           response_name,
@@ -92,7 +92,7 @@ sequential_prediction_function = function(prediction_set_list,
   
   # Extract the predictor set from the predictor set list
   df_predict = prediction_set_list[[set_name]][[transformation]] %>%
-      dplyr::select(-participant_id)
+    dplyr::select(-participant_id)
   
   # Extract the response from the prediction set
   y_vec = df_predict[[response_name]]
@@ -247,7 +247,7 @@ sequential_prediction_function = function(prediction_set_list,
     transformation_string = "ssGSEA scores"
   } else if (transformation == "pc1"){
     transformation_string = "PC1 scores"
-  } else if (transformation %in% c("mean", "median", "max", "mean-z", "median-z", "max-z", "mean-rank", "median-rank", "max-rank")){
+  } else if (transformation %in% c("mean", "median", "max", "mean-z", "median-z", "max-z","mean-rank", "median-rank", "max-rank", "ssgsea")){
     transformation_string = paste0(paste(toupper(substr(transformation, 1, 1)), substr(transformation, 2, nchar(transformation)), sep=""), " of gene-set expression")
   }
   
@@ -256,9 +256,9 @@ sequential_prediction_function = function(prediction_set_list,
     subtitle = paste0("Baseline demographic information only")
   } else if (include_clinical && timepoint_number != "clinical") {
     subtitle = paste0(transformation_string, 
-      " at day ",
-      timepoint_number,
-      " post-vaccination (demographic variables included)"
+                      " at day ",
+                      timepoint_number,
+                      " post-vaccination (demographic variables included)"
     )
   } else {
     subtitle = paste0(transformation_string, 
@@ -288,7 +288,7 @@ sequential_prediction_function = function(prediction_set_list,
     labs(
       x = "Observed",
       y = "Predicted",
-      title = "Yellow Fever (LV): cross-validation predicted versus observed values",
+      title = "Influenza (IN): cross-validation predicted versus observed values",
       subtitle =  subtitle
     ) +
     # add annotation in top-left
@@ -430,15 +430,15 @@ sequential_prediction_function = function(prediction_set_list,
 # Now we need to apply this function to all of our vaccines and sequential predictor sets
 
 # prepare a results list with the same structure as the predictor set list
-prediction_results_sequential_list_yellowfeverlv_withoutTBA = vector("list", length(sequential_prediction_sets))
-names(prediction_results_sequential_list_yellowfeverlv_withoutTBA) <- names(sequential_prediction_sets)
+prediction_results_sequential_list_influenzain_withoutTBA = vector("list", length(sequential_prediction_sets))
+names(prediction_results_sequential_list_influenzain_withoutTBA) <- names(sequential_prediction_sets)
 
 
 # For each predictor set
 for (set in names(sequential_prediction_sets)){
   transformation_names <- names(sequential_prediction_sets[[set]])
-  prediction_results_sequential_list_yellowfeverlv_withoutTBA[[set]] <- vector("list", length(transformation_names))
-  names(prediction_results_sequential_list_yellowfeverlv_withoutTBA[[set]]) <- transformation_names
+  prediction_results_sequential_list_influenzain_withoutTBA[[set]] <- vector("list", length(transformation_names))
+  names(prediction_results_sequential_list_influenzain_withoutTBA[[set]]) <- transformation_names
   # For each transformation
   for (trans in transformation_names) {
     
@@ -461,7 +461,7 @@ for (set in names(sequential_prediction_sets)){
       )
     
     # store the result
-    prediction_results_sequential_list_yellowfeverlv_withoutTBA[[set]][[trans]] <- res
+    prediction_results_sequential_list_influenzain_withoutTBA[[set]][[trans]] <- res
     
     gc()
     
@@ -470,20 +470,20 @@ for (set in names(sequential_prediction_sets)){
 
 
 # Save these results
-p_prediction_results_sequential_list_yellowfeverlv_withoutTBA = fs::path(
+p_prediction_results_sequential_list_influenzain_withoutTBA = fs::path(
   "output",
   "results",
   "prediction",
-  "prediction_results_sequential_list_yellowfeverlv_withoutTBA.rds"
+  "prediction_results_sequential_list_influenzain_withoutTBA.rds"
 )
 
-saveRDS(prediction_results_sequential_list_yellowfeverlv_withoutTBA,
-        file = p_prediction_results_sequential_list_yellowfeverlv_withoutTBA)
+saveRDS(prediction_results_sequential_list_influenzain_withoutTBA,
+        file = p_prediction_results_sequential_list_influenzain_withoutTBA)
 
 # Plot - bar chart of sRMSE across predictor sets, stratified by transformation
 
 # your list (use the real object from your environment)
-res_list <- prediction_results_sequential_list_yellowfeverlv_withoutTBA
+res_list <- prediction_results_sequential_list_influenzain_withoutTBA
 
 # 1) baseline sRMSE (clinical)
 baseline_srmse <- res_list[["clinical"]][["clinical"]][["metrics"]][["sRMSE"]]
@@ -556,7 +556,7 @@ p_srmse <- ggplot(df, aes(x = set, y = sRMSE, fill = trans)) +
     x = "Predictor set",
     y = "Standardised RMSE (sRMSE)",
     fill = "Transformation",
-    title = "Yellow Fever : Random Forest C.V. prediction standardised RMSE by predictor set and transformation",
+    title = "Influenza : Random Forest C.V. prediction standardised RMSE by predictor set and transformation",
     subtitle = "Baseline demographic model performance shown as dashed line (smaller = better)"
   ) +
   
@@ -584,7 +584,7 @@ print(p_srmse)
 # Same for R
 
 # your list (use the real object from your environment)
-res_list <- prediction_results_sequential_list_yellowfeverlv_withoutTBA
+res_list <- prediction_results_sequential_list_influenzain_withoutTBA
 
 # 1) baseline sRMSE (clinical)
 baseline_Rspearman <- res_list[["clinical"]][["clinical"]][["metrics"]][["Rspearman"]]
@@ -657,7 +657,7 @@ p_Rspearman <- ggplot(df, aes(x = set, y = Rspearman, fill = trans)) +
     x = "Predictor set",
     y = "Spearman R",
     fill = "Transformation",
-    title = "Yellow Fever : Random Forest C.V. prediction Spearman R by predictor set and transformation",
+    title = "Influenza : Random Forest C.V. prediction Spearman R by predictor set and transformation",
     subtitle = "Baseline demographic model performance shown as dashed line (higher = better)"
   ) +
   
@@ -688,7 +688,7 @@ print(p_Rspearman)
 prediction_figures_folder = fs::path("output", "figures", "prediction", "transformation")
 
 ggsave(
-  filename = "evaluation_transformation_srmse_yellowfeverlv_ranger.pdf",
+  filename = "evaluation_transformation_srmse_influenzain_ranger.pdf",
   path = prediction_figures_folder,
   plot = p_srmse,
   width = 45,
@@ -697,7 +697,7 @@ ggsave(
 )
 
 ggsave(
-  filename = "evaluation_transformation_rspearman_yellowfeverlv_ranger.pdf",
+  filename = "evaluation_transformation_rspearman_influenzain_ranger.pdf",
   path = prediction_figures_folder,
   plot = p_Rspearman,
   width = 45,
