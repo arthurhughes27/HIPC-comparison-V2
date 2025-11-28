@@ -431,15 +431,16 @@ names(d14) = transformations_of_interest
 clinical_df <- d0_clinical
 
 # initialize main list with clinical info as first element
-sequential_list <- list(clinical = clinical_df)
+sequential_list <- list(clinical = list(clinical = clinical_df))
 
 # loop over timepoints of interest
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # retrieve the list of transformations for this timepoint
   # NOTE: ensure that objects d0, d3, d7, d14 exist in environment
-  tp_df_list <- get(time_name)
+  tp_df_list <- get(time_numeric)
   
   # create a sublist for this timepoint
   sequential_list[[time_name]] <- list()
@@ -472,8 +473,7 @@ if (!exists("clinical_df")) stop("clinical_df not found in environment.")
 if (!("participant_id" %in% colnames(clinical_df))) stop("'participant_id' column missing from clinical_df.")
 
 # initialize result and cumulative storage
-cumulative_list <- list(clinical = clinical_df)
-
+cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
@@ -483,10 +483,11 @@ cumulative_by_trans <- setNames(
 
 # iterate through timepoints and accumulate features
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # attempt to retrieve the object named "d{tp}" (may be NULL if not created)
-  tp_df_list <- tryCatch(get(time_name), error = function(e) NULL)
+  tp_df_list <- tryCatch(get(time_numeric), error = function(e) NULL)
   
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()
@@ -637,15 +638,16 @@ names(d14) = transformations_of_interest
 clinical_df <- d0_clinical
 
 # initialize main list with clinical info as first element
-sequential_list <- list(clinical = clinical_df)
+sequential_list <- list(clinical = list(clinical = clinical_df))
 
 # loop over timepoints of interest
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # retrieve the list of transformations for this timepoint
   # NOTE: ensure that objects d0, d3, d7, d14 exist in environment
-  tp_df_list <- get(time_name)
+  tp_df_list <- get(time_numeric)
   
   # create a sublist for this timepoint
   sequential_list[[time_name]] <- list()
@@ -678,8 +680,7 @@ if (!exists("clinical_df")) stop("clinical_df not found in environment.")
 if (!("participant_id" %in% colnames(clinical_df))) stop("'participant_id' column missing from clinical_df.")
 
 # initialize result and cumulative storage
-cumulative_list <- list(clinical = clinical_df)
-
+cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
@@ -689,10 +690,11 @@ cumulative_by_trans <- setNames(
 
 # iterate through timepoints and accumulate features
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # attempt to retrieve the object named "d{tp}" (may be NULL if not created)
-  tp_df_list <- tryCatch(get(time_name), error = function(e) NULL)
+  tp_df_list <- tryCatch(get(time_numeric), error = function(e) NULL)
   
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()

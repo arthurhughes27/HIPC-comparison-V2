@@ -1,4 +1,4 @@
-# R script to engineer Influenza (IN) expression data into gene-set level features
+# R script to engineer Influenza expression data into gene-set level features
 # - read inputs, define timepoints, and filter to relevant samples
 
 library(dplyr)
@@ -17,9 +17,9 @@ hipc_merged_all_norm <- readRDS(p_load_expr_all_norm)
 BTM                  <- readRDS(p_load_btm)
 
 # Timepoints of interest (numeric)
-timepoints_of_interest <- c(0, 1, 3, 7, 14)
+timepoints_of_interest <- c(0, 3, 7, 14)
 
-# Filter to samples with non-missing immune response, Influenza (IN) vaccine,
+# Filter to samples with non-missing immune response, Influenza vaccine,
 # and collected at one of the specified timepoints.
 hipc_merged_all_norm_filtered <- hipc_merged_all_norm %>%
   filter(
@@ -41,18 +41,18 @@ gene_names = hipc_merged_all_norm_filtered %>%
 # timepoint = 7
 
 compute_geneset_baseline_transformation <- function(df,
-                                     genesets,
-                                     geneset_names,
-                                     id_col,
-                                     time_col,
-                                     transformation = c("mean",
-                                                        "median",
-                                                        "max",
-                                                        "mean-rank",
-                                                        "median-rank",
-                                                        "max-rank",
-                                                        "pc1",
-                                                        "ssgsea")) {
+                                                    genesets,
+                                                    geneset_names,
+                                                    id_col,
+                                                    time_col,
+                                                    transformation = c("mean",
+                                                                       "median",
+                                                                       "max",
+                                                                       "mean-rank",
+                                                                       "median-rank",
+                                                                       "max-rank",
+                                                                       "pc1",
+                                                                       "ssgsea")) {
   # ---- basic checks --------------------------------------------------------
   if (!is.data.frame(df)) stop("df must be a data.frame")
   if (!is.list(genesets)) stop("genesets must be a list (each element: vector of gene names)")
@@ -341,7 +341,7 @@ transformations_of_interest = c("mean",
                                 "pc1",
                                 "ssgsea")
 
-timepoints_of_interest <- c(0, 1, 3, 7, 14)
+timepoints_of_interest <- c(0, 3, 7, 14)
 
 
 # First, select a clinical baseline dataframe containing vaccine, age, gender
@@ -369,23 +369,6 @@ d0 <- lapply(transformations_of_interest, FUN = function(trans) {
 
 # name the list elements by the transformation used
 names(d0) <- transformations_of_interest
-
-d1 = lapply(
-  transformations_of_interest,
-  FUN = function(trans) {
-    compute_geneset_postvax_fc_transformation(
-      df = hipc_merged_all_norm_filtered,
-      timepoint = 1,
-      genesets = BTM[["genesets"]],
-      geneset_names = BTM[["geneset.names.descriptions"]],
-      id_col = "participant_id",
-      time_col = "study_time_collected",
-      transformation = trans
-    )
-  }
-)
-
-names(d1) = transformations_of_interest
 
 d3 = lapply(
   transformations_of_interest,
@@ -448,15 +431,16 @@ names(d14) = transformations_of_interest
 clinical_df <- d0_clinical
 
 # initialize main list with clinical info as first element
-sequential_list <- list(clinical = clinical_df)
+sequential_list <- list(clinical = list(clinical = clinical_df))
 
 # loop over timepoints of interest
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # retrieve the list of transformations for this timepoint
   # NOTE: ensure that objects d0, d3, d7, d14 exist in environment
-  tp_df_list <- get(time_name)
+  tp_df_list <- get(time_numeric)
   
   # create a sublist for this timepoint
   sequential_list[[time_name]] <- list()
@@ -489,8 +473,7 @@ if (!exists("clinical_df")) stop("clinical_df not found in environment.")
 if (!("participant_id" %in% colnames(clinical_df))) stop("'participant_id' column missing from clinical_df.")
 
 # initialize result and cumulative storage
-cumulative_list <- list(clinical = clinical_df)
-
+cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
@@ -500,10 +483,11 @@ cumulative_by_trans <- setNames(
 
 # iterate through timepoints and accumulate features
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # attempt to retrieve the object named "d{tp}" (may be NULL if not created)
-  tp_df_list <- tryCatch(get(time_name), error = function(e) NULL)
+  tp_df_list <- tryCatch(get(time_numeric), error = function(e) NULL)
   
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()
@@ -564,7 +548,7 @@ transformations_of_interest = c("mean",
                                 "pc1",
                                 "ssgsea")
 
-timepoints_of_interest <- c(0, 1, 3, 7, 14)
+timepoints_of_interest <- c(0, 3, 7, 14)
 
 
 # First, select a clinical baseline dataframe containing vaccine, age, gender
@@ -592,23 +576,6 @@ d0 <- lapply(transformations_of_interest, FUN = function(trans) {
 
 # name the list elements by the transformation used
 names(d0) <- transformations_of_interest
-
-d1 = lapply(
-  transformations_of_interest,
-  FUN = function(trans) {
-    compute_geneset_postvax_fc_transformation(
-      df = hipc_merged_all_norm_filtered,
-      timepoint = 1,
-      genesets = BTM_withoutTBA[["genesets"]],
-      geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
-      id_col = "participant_id",
-      time_col = "study_time_collected",
-      transformation = trans
-    )
-  }
-)
-
-names(d1) = transformations_of_interest
 
 d3 = lapply(
   transformations_of_interest,
@@ -671,15 +638,16 @@ names(d14) = transformations_of_interest
 clinical_df <- d0_clinical
 
 # initialize main list with clinical info as first element
-sequential_list <- list(clinical = clinical_df)
+sequential_list <- list(clinical = list(clinical = clinical_df))
 
 # loop over timepoints of interest
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # retrieve the list of transformations for this timepoint
   # NOTE: ensure that objects d0, d3, d7, d14 exist in environment
-  tp_df_list <- get(time_name)
+  tp_df_list <- get(time_numeric)
   
   # create a sublist for this timepoint
   sequential_list[[time_name]] <- list()
@@ -712,8 +680,7 @@ if (!exists("clinical_df")) stop("clinical_df not found in environment.")
 if (!("participant_id" %in% colnames(clinical_df))) stop("'participant_id' column missing from clinical_df.")
 
 # initialize result and cumulative storage
-cumulative_list <- list(clinical = clinical_df)
-
+cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
@@ -723,10 +690,11 @@ cumulative_by_trans <- setNames(
 
 # iterate through timepoints and accumulate features
 for (tp in timepoints_of_interest) {
-  time_name <- paste0("d", tp)
+  time_name <- paste0("Day ", tp)
+  time_numeric = paste0("d", tp)
   
   # attempt to retrieve the object named "d{tp}" (may be NULL if not created)
-  tp_df_list <- tryCatch(get(time_name), error = function(e) NULL)
+  tp_df_list <- tryCatch(get(time_numeric), error = function(e) NULL)
   
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()
