@@ -533,6 +533,8 @@ df$trans <- factor(df$trans, levels = unique(df$trans))
 # 4) plot: grouped bars per predictor set, one bar per transformation
 # Create a dummy dataframe for the baseline line
 # baseline line as a dummy data frame
+my_colors <- colorRampPalette(brewer.pal(12, "Set3"))(14)
+
 baseline_df <- data.frame(
   label = "Baseline Demographic Model",
   y = baseline_srmse
@@ -549,7 +551,7 @@ p_srmse <- ggplot(df, aes(x = set, y = sRMSE, fill = trans)) +
     show.legend = TRUE
   ) +
   
-  scale_fill_brewer(palette = "Set3") +
+  scale_fill_manual(values = my_colors) +
   scale_linetype_manual(
     name = "", 
     values = c("Baseline Demographic Model" = "dashed")
@@ -650,7 +652,7 @@ p_Rspearman <- ggplot(df, aes(x = set, y = Rspearman, fill = trans)) +
     show.legend = TRUE
   ) +
   
-  scale_fill_brewer(palette = "Set3") +
+  scale_fill_manual(values = my_colors) +
   scale_linetype_manual(
     name = "", 
     values = c("Baseline Demographic Model" = "dashed")
