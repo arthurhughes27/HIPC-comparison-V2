@@ -4,6 +4,10 @@
 library(dplyr)
 library(GSVA)
 library(fs)   # used for path construction (fs::path used below)
+library(tidyr)
+# Load development version of dearseq to calculate gene-level scores
+library(devtools)
+load_all("/home/ah3/Desktop/Work/PhD/dearseq/dearseq-devel/")
 
 # Directory containing engineered / processed data files
 processed_data_folder <- "data"
@@ -32,13 +36,13 @@ gene_names = hipc_merged_all_norm_filtered %>%
   dplyr::select(a1cf:zzz3) %>% 
   colnames()
 
-df = hipc_merged_all_norm_filtered
-genesets = BTM[["genesets"]]
-geneset_names = BTM[["geneset.names.descriptions"]]
-id_col = "participant_id"
-time_col = "study_time_collected"
-transformation = "max-z"
-timepoint = 7
+# df = hipc_merged_all_norm_filtered
+# genesets = BTM[["genesets"]]
+# geneset_names = BTM[["geneset.names.descriptions"]]
+# id_col = "participant_id"
+# time_col = "study_time_collected"
+# transformation = "mean-dearseq"
+# timepoint = 7
 
 compute_geneset_baseline_transformation <- function(df,
                                      genesets,
@@ -199,7 +203,11 @@ compute_geneset_postvax_fc_transformation <- function(df,
                                                                          "median-rank",
                                                                          "max-rank",
                                                                          "pc1",
-                                                                         "ssgsea")) {
+                                                                         "ssgsea",
+                                                                         "mean-dearseq",
+                                                                         "median-dearseq",
+                                                                         "max-dearseq")) {
+  
   # ---- input checks --------------------------------------------------------
   if (!is.data.frame(df)) stop("df must be a data.frame")
   if (!is.list(genesets)) stop("genesets must be a list (each element: vector of gene names)")
@@ -221,6 +229,8 @@ compute_geneset_postvax_fc_transformation <- function(df,
     col_transformation <- "ssgsea"
   } else if ("z" %in% split_strings){
     col_transformation = "z"
+  } else if ("dearseq" %in% split_strings){
+    col_transformation = "dearseq"
   } else {
     col_transformation <- NA
   }
@@ -233,6 +243,101 @@ compute_geneset_postvax_fc_transformation <- function(df,
   } else if (split_strings[1] == "max") {
     row_transformation <- function(x) max(x, na.rm = TRUE)
   }
+  
+  
+  # If dearseq scores wanted, transform and apply dearseq function now
+  if (!is.na(col_transformation) && col_transformation == "dearseq"){
+    
+    df_filtered <- df %>%
+      filter(.data[[time_col]] %in% c(0, timepoint)) %>%
+      group_by(.data[[id_col]]) %>%
+      filter(all(c(0, timepoint) %in% .data[[time_col]])) %>%
+      ungroup()
+    
+    df_filtered$gender = droplevels(df_filtered$gender)
+    
+    subject_ids = df_filtered$participant_id
+    
+    x = model.matrix(~ age_imputed + gender + study_accession, data = df_filtered)
+    
+    exprmat = df_filtered %>% 
+      dplyr::select(all_of(gene_names)) %>% 
+      as.matrix() %>% 
+      t()
+    
+    phi = df_filtered %>% 
+      dplyr::select(all_of(time_col)) %>% 
+      as.matrix()
+    
+    score_res = calculate_scores(
+      y = exprmat,
+      x = x,
+      GSA = BTM,
+      phi = phi %>% as.matrix(),
+      use_phi = TRUE,
+      preprocessed = TRUE,
+      gene_based = FALSE,
+      bw = "nrd",
+      active_level = timepoint,
+      sample_group = subject_ids
+    )
+    
+    # Get unique participant IDs
+    unique_ids <- unique(subject_ids)
+    
+    diff_list <- lapply(score_res[["individual.scores"]], function(mat) {
+      
+      n_part <- length(unique_ids)
+      n_col <- ncol(mat)
+      
+      # Initialize output matrix
+      diff_mat <- matrix(NA, nrow = n_part, ncol = n_col)
+      colnames(diff_mat) <- colnames(mat)
+      rownames(diff_mat) <- unique_ids
+      
+      # Loop over participants
+      for (i in seq_along(unique_ids)) {
+        pid <- unique_ids[i]
+        idx <- which(subject_ids == pid)
+        
+        # Indices for time 0 and the specified timepoint
+        idx0 <- idx[phi[idx] == 0]
+        idx_tp <- idx[phi[idx] == timepoint]
+        
+        # Compute difference
+        diff_mat[i, ] <- mat[idx_tp, ] - mat[idx0, ]
+      }
+      
+      diff_mat
+    })
+    
+    transformed_list <- lapply(diff_list, function(mat) {
+      # Apply row_transformation to each row
+      result <- apply(mat, 1, row_transformation)
+      
+      # Make it a column matrix (optional)
+      matrix(result, ncol = 1, dimnames = list(rownames(mat), NULL))
+    })
+    
+    # Get participant IDs from the first vector
+    participant_ids <- rownames(transformed_list[[1]])
+    
+    geneset_df =  do.call(cbind, transformed_list)
+    colnames(geneset_df) = names(transformed_list)
+    
+    # Combine vectors into a dataframe
+    result <- data.frame(
+      participant_ids,
+      geneset_df
+    )
+    
+    # Rename the first column to the value of id_col
+    colnames(result)[1] <- id_col
+    
+    return(result)
+  }
+  
+  
   
   # ---- time coercion ------------------------------------------------------
   df[[time_col]] <- as.numeric(df[[time_col]])
@@ -348,17 +453,36 @@ compute_geneset_postvax_fc_transformation <- function(df,
 
 # Now we can calculate geneset-level features for each timepoint of interest
 
-transformations_of_interest = c("mean",
-                                 "median",
-                                 "max",
-                                 "mean-z",
-                                 "median-z",
-                                 "max-z",
-                                 "mean-rank",
-                                 "median-rank",
-                                 "max-rank",
-                                 "pc1",
-                                 "ssgsea")
+transformations_of_interest_prevax = c(
+  "mean",
+  "median",
+  "max",
+  "mean-z",
+  "median-z",
+  "max-z",
+  "mean-rank",
+  "median-rank",
+  "max-rank",
+  "pc1",
+  "ssgsea"
+)
+
+transformations_of_interest_postvax = c(
+  "mean",
+  "median",
+  "max",
+  "mean-z",
+  "median-z",
+  "max-z",
+  "mean-rank",
+  "median-rank",
+  "max-rank",
+  "pc1",
+  "ssgsea",
+  "mean-dearseq",
+  "median-dearseq",
+  "max-dearseq"
+)
 
 timepoints_of_interest <- c(0, 3, 7, 14)
 
@@ -375,7 +499,7 @@ d0_clinical <- hipc_merged_all_norm_filtered %>%
   ) %>%
   dplyr::distinct()
 
-d0 <- lapply(transformations_of_interest, FUN = function(trans) {
+d0 <- lapply(transformations_of_interest_prevax, FUN = function(trans) {
   compute_geneset_baseline_transformation(
     df = hipc_merged_all_norm_filtered,
     genesets = BTM[["genesets"]],
@@ -387,10 +511,10 @@ d0 <- lapply(transformations_of_interest, FUN = function(trans) {
 })
 
 # name the list elements by the transformation used
-names(d0) <- transformations_of_interest
+names(d0) <- transformations_of_interest_prevax
 
 d3 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -404,11 +528,11 @@ d3 = lapply(
   }
 )
 
-names(d3) = transformations_of_interest
+names(d3) = transformations_of_interest_postvax
 
 
 d7 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -422,10 +546,10 @@ d7 = lapply(
   }
 )
 
-names(d7) = transformations_of_interest
+names(d7) = transformations_of_interest_postvax
 
 d14 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -439,7 +563,7 @@ d14 = lapply(
   }
 )
 
-names(d14) = transformations_of_interest
+names(d14) = transformations_of_interest_postvax
 
 
 # --- organize clinical and geneset data into a nested list -------------------
@@ -465,8 +589,13 @@ for (tp in timepoints_of_interest) {
   sequential_list[[time_name]] <- list()
   
   # loop over transformations
-  for (trans in transformations_of_interest) {
+  for (trans in transformations_of_interest_postvax) {
     tp_df <- tp_df_list[[trans]]
+    
+    if(is.null(tp_df)){
+      
+      next
+    }
     
     # reorder columns: participant_id first
     tp_df <- tp_df %>% dplyr::select(participant_id, dplyr::everything())
@@ -496,8 +625,8 @@ cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
-  lapply(transformations_of_interest, function(x) clinical_df),
-  transformations_of_interest
+  lapply(transformations_of_interest_postvax, function(x) clinical_df),
+  transformations_of_interest_postvax
 )
 
 # iterate through timepoints and accumulate features
@@ -511,10 +640,10 @@ for (tp in timepoints_of_interest) {
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()
   
-  for (trans in transformations_of_interest) {
+  for (trans in transformations_of_interest_postvax) {
     # if no data available for this timepoint/transformation, keep the running cumulative df
     if (is.null(tp_df_list) || is.null(tp_df_list[[trans]])) {
-      cumulative_list[[time_name]][[trans]] <- cumulative_by_trans[[trans]]
+      
       next
     }
     
@@ -553,21 +682,6 @@ BTM_withoutTBA[["geneset.names"]] <- BTM_withoutTBA[["geneset.names"]][-idx]
 BTM_withoutTBA[["geneset.aggregates"]] = BTM_withoutTBA[["geneset.aggregates"]][-idx]
 BTM_withoutTBA[["geneset.names.descriptions"]] = BTM_withoutTBA[["geneset.names.descriptions"]][-idx]
 
-transformations_of_interest = c("mean",
-                                "median",
-                                "max",
-                                "mean-z",
-                                "median-z",
-                                "max-z",
-                                "mean-rank",
-                                "median-rank",
-                                "max-rank",
-                                "pc1",
-                                "ssgsea")
-
-timepoints_of_interest <- c(0, 3, 7, 14)
-
-
 # First, select a clinical baseline dataframe containing vaccine, age, gender
 d0_clinical <- hipc_merged_all_norm_filtered %>%
   dplyr::select(
@@ -580,7 +694,7 @@ d0_clinical <- hipc_merged_all_norm_filtered %>%
   ) %>%
   dplyr::distinct()
 
-d0 <- lapply(transformations_of_interest, FUN = function(trans) {
+d0 <- lapply(transformations_of_interest_prevax, FUN = function(trans) {
   compute_geneset_baseline_transformation(
     df = hipc_merged_all_norm_filtered,
     genesets = BTM_withoutTBA[["genesets"]],
@@ -592,10 +706,10 @@ d0 <- lapply(transformations_of_interest, FUN = function(trans) {
 })
 
 # name the list elements by the transformation used
-names(d0) <- transformations_of_interest
+names(d0) <- transformations_of_interest_prevax
 
 d3 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -609,11 +723,11 @@ d3 = lapply(
   }
 )
 
-names(d3) = transformations_of_interest
+names(d3) = transformations_of_interest_postvax
 
 
 d7 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -627,10 +741,10 @@ d7 = lapply(
   }
 )
 
-names(d7) = transformations_of_interest
+names(d7) = transformations_of_interest_postvax
 
 d14 = lapply(
-  transformations_of_interest,
+  transformations_of_interest_postvax,
   FUN = function(trans) {
     compute_geneset_postvax_fc_transformation(
       df = hipc_merged_all_norm_filtered,
@@ -644,7 +758,7 @@ d14 = lapply(
   }
 )
 
-names(d14) = transformations_of_interest
+names(d14) = transformations_of_interest_postvax
 
 
 # --- organize clinical and geneset data into a nested list -------------------
@@ -670,8 +784,12 @@ for (tp in timepoints_of_interest) {
   sequential_list[[time_name]] <- list()
   
   # loop over transformations
-  for (trans in transformations_of_interest) {
+  for (trans in transformations_of_interest_postvax) {
     tp_df <- tp_df_list[[trans]]
+    
+    if(is.null(tp_df)){
+      next
+    }
     
     # reorder columns: participant_id first
     tp_df <- tp_df %>% dplyr::select(participant_id, dplyr::everything())
@@ -701,8 +819,8 @@ cumulative_list <- list(clinical = list(clinical = clinical_df))
 # create a named list of cumulative dataframes (one per transformation),
 # starting from the clinical baseline
 cumulative_by_trans <- setNames(
-  lapply(transformations_of_interest, function(x) clinical_df),
-  transformations_of_interest
+  lapply(transformations_of_interest_postvax, function(x) clinical_df),
+  transformations_of_interest_postvax
 )
 
 # iterate through timepoints and accumulate features
@@ -716,10 +834,10 @@ for (tp in timepoints_of_interest) {
   # create container for this timepoint in the cumulative list
   cumulative_list[[time_name]] <- list()
   
-  for (trans in transformations_of_interest) {
+  for (trans in transformations_of_interest_postvax) {
     # if no data available for this timepoint/transformation, keep the running cumulative df
     if (is.null(tp_df_list) || is.null(tp_df_list[[trans]])) {
-      cumulative_list[[time_name]][[trans]] <- cumulative_by_trans[[trans]]
+      
       next
     }
     

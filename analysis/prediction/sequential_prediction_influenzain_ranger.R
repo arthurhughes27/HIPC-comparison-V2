@@ -50,11 +50,23 @@ prediction_set_colours = list(
   "Day 14" = "#780000"
 )
 
+# prediction_set_list = sequential_prediction_sets
+# transformation = "mean-dearseq"
+# set_name = "Day 0"
+# n_outer = 10
+# n_inner = 5
+# response_name = "immResp_MFC_anyAssay_log2_MFC"
+# clinical_cols = c("age_imputed", "gender")
+# include_clinical = TRUE
+# seed = 22072025
+# n_cores = 8
+# verbose = FALSE
+
 
 # Write a function to perform prediction for a given vaccine with information sequential at a given timepoint
 sequential_prediction_function = function(prediction_set_list,
                                           set_name = "clinical",
-                                          transformation = c("mean", "median", "max", "mean-z", "median-z", "max-z","mean-rank", "median-rank", "max-rank", "ssgsea"),
+                                          transformation = c("mean", "median", "max", "mean-z", "median-z", "max-z", "mean-rank", "median-rank", "max-rank", "ssgsea"),
                                           n_outer,
                                           n_inner,
                                           response_name,
@@ -63,19 +75,6 @@ sequential_prediction_function = function(prediction_set_list,
                                           seed = 22072025,
                                           n_cores = 1,
                                           verbose = TRUE) {
-  
-  
-  # prediction_set_list = sequential_prediction_sets
-  # transformation = "clinical"
-  # set_name = "clinical"
-  # n_outer = 10
-  # n_inner = 5
-  # response_name = "immResp_MFC_anyAssay_log2_MFC"
-  # clinical_cols = c("age_imputed", "gender")
-  # include_clinical = TRUE
-  # seed = 22072025
-  # n_cores = 8
-  # verbose = FALSE
   
   
   # Set seeds
@@ -91,8 +90,14 @@ sequential_prediction_function = function(prediction_set_list,
   }
   
   # Extract the predictor set from the predictor set list
-  df_predict = prediction_set_list[[set_name]][[transformation]] %>%
-    dplyr::select(-participant_id)
+  df_predict = prediction_set_list[[set_name]][[transformation]] 
+  
+  if (is.null(df_predict)) {
+    return(NULL)
+  } else {
+    df_predict = df_predict %>%
+      dplyr::select(-participant_id)
+  }
   
   # Extract the response from the prediction set
   y_vec = df_predict[[response_name]]
@@ -247,7 +252,13 @@ sequential_prediction_function = function(prediction_set_list,
     transformation_string = "ssGSEA scores"
   } else if (transformation == "pc1"){
     transformation_string = "PC1 scores"
-  } else if (transformation %in% c("mean", "median", "max", "mean-z", "median-z", "max-z","mean-rank", "median-rank", "max-rank", "ssgsea")){
+  } else if(transformation == "mean-dearseq"){
+    transformation_string = "Mean dearseq scores"
+  } else if(transformation == "median-dearseq"){
+    transformation_string = "Median dearseq scores"
+  } else if(transformation == "max-dearseq"){
+    transformation_string = "Max dearseq scores"
+  } else if (transformation %in% c("mean", "median", "max", "mean-z", "median-z", "max-z", "mean-rank", "median-rank", "max-rank")){
     transformation_string = paste0(paste(toupper(substr(transformation, 1, 1)), substr(transformation, 2, nchar(transformation)), sep=""), " of gene-set expression")
   }
   
@@ -477,10 +488,13 @@ p_prediction_results_sequential_list_influenzain_withoutTBA = fs::path(
   "prediction_results_sequential_list_influenzain_withoutTBA.rds"
 )
 
+
 saveRDS(prediction_results_sequential_list_influenzain_withoutTBA,
         file = p_prediction_results_sequential_list_influenzain_withoutTBA)
 
 # Plot - bar chart of sRMSE across predictor sets, stratified by transformation
+
+prediction_results_sequential_list_influenzain_withoutTBA = readRDS(p_prediction_results_sequential_list_influenzain_withoutTBA)
 
 # your list (use the real object from your environment)
 res_list <- prediction_results_sequential_list_influenzain_withoutTBA
