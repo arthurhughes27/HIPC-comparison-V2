@@ -21,7 +21,7 @@ hipc_merged_all_norm <- readRDS(p_load_expr_all_norm)
 BTM                  <- readRDS(p_load_btm)
 
 # Timepoints of interest (numeric)
-timepoints_of_interest <- c(0, 3, 7, 14)
+timepoints_of_interest <- c(0, 1, 3, 7, 14)
 
 # Filter to samples with non-missing immune response, Influenza vaccine,
 # and collected at one of the specified timepoints.
@@ -484,7 +484,7 @@ transformations_of_interest_postvax = c(
   "max-dearseq"
 )
 
-timepoints_of_interest <- c(0, 3, 7, 14)
+timepoints_of_interest <- c(0, 1, 3, 7, 14)
 
 
 # First, select a clinical baseline dataframe containing vaccine, age, gender
@@ -512,6 +512,23 @@ d0 <- lapply(transformations_of_interest_prevax, FUN = function(trans) {
 
 # name the list elements by the transformation used
 names(d0) <- transformations_of_interest_prevax
+
+d1 = lapply(
+  transformations_of_interest_postvax,
+  FUN = function(trans) {
+    compute_geneset_postvax_fc_transformation(
+      df = hipc_merged_all_norm_filtered,
+      timepoint = 1,
+      genesets = BTM[["genesets"]],
+      geneset_names = BTM[["geneset.names.descriptions"]],
+      id_col = "participant_id",
+      time_col = "study_time_collected",
+      transformation = trans
+    )
+  }
+)
+
+names(d1) = transformations_of_interest_postvax
 
 d3 = lapply(
   transformations_of_interest_postvax,
@@ -707,6 +724,23 @@ d0 <- lapply(transformations_of_interest_prevax, FUN = function(trans) {
 
 # name the list elements by the transformation used
 names(d0) <- transformations_of_interest_prevax
+
+d1 = lapply(
+  transformations_of_interest_postvax,
+  FUN = function(trans) {
+    compute_geneset_postvax_fc_transformation(
+      df = hipc_merged_all_norm_filtered,
+      timepoint = 1,
+      genesets = BTM_withoutTBA[["genesets"]],
+      geneset_names = BTM_withoutTBA[["geneset.names.descriptions"]],
+      id_col = "participant_id",
+      time_col = "study_time_collected",
+      transformation = trans
+    )
+  }
+)
+
+names(d1) = transformations_of_interest_postvax
 
 d3 = lapply(
   transformations_of_interest_postvax,
