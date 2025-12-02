@@ -5,6 +5,12 @@ library(tidyverse)
 library(SurrogateRank)
 library(purrr)
 library(stringr)
+library(tibble)
+library(ComplexHeatmap)
+library(circlize)
+library(grid)
+library(forcats)
+library(tidytext)
 
 # Directory containing engineered / processed data files
 processed_data_folder <- "data"
@@ -27,44 +33,51 @@ hipc_merged_all_norm_filtered <- hipc_merged_all_norm %>%
     study_time_collected %in% timepoints_of_interest
   )
 
+# Extract the gene names
 gene_names = hipc_merged_all_norm_filtered %>% 
   dplyr::select(a1cf:zzz3) %>% 
   colnames()
 
-
+# Extract the study names
 study_names = hipc_merged_all_norm_filtered %>% 
   filter(study_time_collected > 0) %>% 
   pull(study_accession) %>% 
   unique()
 
+# Initialise results vector 
 rise_results_list = vector("list", length(study_names))
 names(rise_results_list) = study_names
 
-for(study in study_names) {
-  message(paste0("Analysing study ", study, "..."))
+for(study in study_names) { # For each study
+  message(paste0("Analysing study ", study, "...")) 
   
+  # Filter data by study
   hipc_merged_all_norm_filtered_study = hipc_merged_all_norm_filtered %>%
     filter(study_accession == study)
   
-  timepoints = hipc_merged_all_norm_filtered_study %>%
+  # Extract possible timepoints (must have at least 4 observations i.e. 2 pairs)
+  timepoints <- hipc_merged_all_norm_filtered_study %>%
     filter(study_time_collected > 0) %>%
+    count(study_time_collected) %>%     
+    filter(n >= 4) %>%                   
     pull(study_time_collected) %>%
-    unique() %>%
     sort()
   
+  # Initialise within-study results 
   rise_results_list[[study]] = vector("list", length(timepoints))
   names(rise_results_list[[study]]) = paste0("Day ", timepoints)
   
-  for (tp in timepoints) {
+  for (tp in timepoints) { # For each available timepoint
     message(paste0("Day ", tp, " in progress."))
     
-    
+    # Filter by timepoint 
     hipc_merged_all_norm_filtered_study_tp = hipc_merged_all_norm_filtered_study %>%
       filter(study_time_collected %in% c(0, tp)) %>%
       group_by(participant_id) %>%
       filter(all(c(0, tp) %in% study_time_collected)) %>%
       ungroup()
     
+    # Arrange data
     rise_df = hipc_merged_all_norm_filtered_study_tp %>%
       dplyr::select(
         participant_id,
@@ -75,22 +88,34 @@ for(study in study_names) {
       ) %>%
       arrange(participant_id)
     
+    # Pre-vaccination response
     yzero = rise_df %>%
       filter(study_time_collected == 0) %>%
       pull(immResp_MFC_anyAssay_pre_value)
     
+    # Post-vaccination response
     yone = rise_df %>%
       filter(study_time_collected == tp) %>%
       pull(immResp_MFC_anyAssay_post_value)
     
+    # Pre-vaccination gene expression
     szero = rise_df %>%
       filter(study_time_collected == 0) %>%
       dplyr::select(all_of(gene_names))
     
+    # Post-vaccination gene expression
     sone = rise_df %>%
       filter(study_time_collected == tp) %>%
       dplyr::select(all_of(gene_names))
     
+    # Extract the estimated effect on the response on the relevant samples
+    yresult = SurrogateRank::test.surrogate.extension(yone = yone, yzero = yzero,
+                                            sone = yone, szero = yzero,
+                                            power.want.s = 0.8,
+                                            paired = T,
+                                            alternative = "two.sided")[["u.y"]]
+    
+    # Screen all markers
     rise_result = rise.screen(
       yone,
       yzero,
@@ -104,12 +129,21 @@ for(study in study_names) {
       paired = TRUE
     )
     
+    # Store the treatment effects on each marker
+    rise_result[["screening.metrics"]]$u_y = yresult
+    rise_result[["screening.metrics"]]$u_s = yresult - rise_result[["screening.metrics"]]$delta
+    
+    # Store the number of observations
+    rise_result[["screening.metrics"]]$n = 2*length(yone)
+    
+    # Store the results in the list
     rise_results_list[[study]][[paste0("Day ", tp)]] = rise_result[["screening.metrics"]]
     
   }
   
 }
 
+# Specify the path to save the results
 p_rise_results_list_influenzain = fs::path(
   "output",
   "results",
@@ -117,12 +151,14 @@ p_rise_results_list_influenzain = fs::path(
   "rise_results_list_influenzain.rds"
 )
 
-
+# Save the results
 saveRDS(rise_results_list,
         file = p_rise_results_list_influenzain)
 
-# Bind the results together including study and timepoint identifiers
+# Read back in the results if necessary
+rise_results_list = readRDS(p_rise_results_list_influenzain)
 
+# Bind the results together including study and timepoint identifiers
 rise_results_df <- purrr::imap_dfr(rise_results_list, ~ {
   study_list <- .x
   study_name <- .y
@@ -149,196 +185,111 @@ rise_results_df <- purrr::imap_dfr(rise_results_list, ~ {
   relocate(study_accession, study_time_collected)
 
 
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(ComplexHeatmap)
-library(circlize)
-library(grid)
 
-## -----------------------
-## User params
-## -----------------------
-p_limit <- 0.05            # significance threshold for p_adjusted
-sharing_thresh <- 3        # keep genes with sharing_score >= this
-sigma <- 0.21               # how tightly red is concentrated near zero; smaller => tighter
-power <- 2                # exponent; >2 sharper near zero
+### FIRST EXPLORATION OF RESULTS ###
+# Calculate a weighted average of delta values across studies for each timepoint
+# The weights will be the square root of the number of observations
+# such that larger samples provide more evidence
 
-## -----------------------
-## Basic checks
-## -----------------------
-required_cols <- c("marker", "study_accession", "study_time_collected", "delta", "p_adjusted")
-if (!all(required_cols %in% names(rise_results_df))) {
-  stop("rise_results_df must contain columns: ", paste(required_cols, collapse = ", "))
-}
-
-## -----------------------
-## Compute sharing score:
-## - For each marker × study_accession: is there any timepoint with p_adjusted < p_limit?
-## - For each marker: count the number of studies with any_sig == TRUE
-## - Keep markers with sharing_score >= sharing_thresh
-## -----------------------
-sharing_df <- rise_results_df %>%
-  filter(!is.na(p_adjusted)) %>%
-  group_by(marker, study_accession) %>%
-  summarise(any_sig_in_study = any(p_adjusted < p_limit, na.rm = TRUE), .groups = "drop") %>%
-  group_by(marker) %>%
-  summarise(sharing_score = sum(as.integer(any_sig_in_study), na.rm = TRUE), .groups = "drop")
-
-kept_markers <- sharing_df %>%
-  filter(sharing_score >= sharing_thresh) %>%
-  pull(marker)
-
-if (length(kept_markers) == 0) {
-  stop("No markers pass the sharing_score filter (sharing_thresh = ", sharing_thresh, ").")
-}
-
-## -----------------------
-## Filter the main results to the kept markers
-## -----------------------
-rise_results_df_filt <- rise_results_df %>%
-  filter(marker %in% kept_markers)
-
-## -----------------------
-## 1) Build delta and p matrices aligned by (marker, col_id)
-## -----------------------
-processed <- rise_results_df_filt %>%
-  mutate(
-    study_time_collected = as.numeric(as.character(study_time_collected)),
-    col_id = paste0("Day", study_time_collected, "_", study_accession)
+# First, derive weighted averages
+rise_summary <- rise_results_df %>%
+  group_by(marker, study_time_collected) %>%
+  summarise(
+    w_sum = sum(sqrt(n), na.rm = TRUE),
+    weighted_delta = if (w_sum > 0) sum(delta * sqrt(n), na.rm = TRUE) / w_sum else NA_real_,
+    n_studies = n_distinct(study_accession),
+    .groups = "drop"
   )
 
-mat_df <- processed %>%
-  group_by(marker, col_id) %>%
-  summarise(delta = mean(delta, na.rm = TRUE), .groups = "drop") %>%
-  pivot_wider(names_from = col_id, values_from = delta, values_fill = NA)
+# Parameters
+timepoints_of_interest_heatmap <- c(1, 3, 7, 14)
+n_markers <- 150
+cutoff <- 0.9  # define the cutoff
 
-p_df <- processed %>%
-  group_by(marker, col_id) %>%
-  summarise(p_adj = min(p_adjusted, na.rm = TRUE), .groups = "drop") %>%
-  pivot_wider(names_from = col_id, values_from = p_adj, values_fill = NA)
+# Prepare plotting data
+df_plot <- rise_summary %>%
+  filter(study_time_collected %in% timepoints_of_interest_heatmap) %>%
+  mutate(plot_value = 1 - weighted_delta) %>%
+  group_by(study_time_collected) %>%
+  arrange(desc(plot_value)) %>%
+  slice(1:n_markers) %>%
+  ungroup() %>%
+  mutate(
+    timepoint = factor(study_time_collected, levels = timepoints_of_interest_heatmap),
+    marker_reordered = reorder_within(marker, plot_value, timepoint, .desc = TRUE),
+    color_flag = ifelse(plot_value > cutoff, "above_cutoff", "below_cutoff")
+  )
 
-if (ncol(mat_df) <= 1) {
-  stop("After filtering/aggregation no study×timepoint columns remain to plot.")
-}
+plot_min <- min(df_plot$plot_value, na.rm = TRUE) - 0.05
 
-mat <- mat_df %>% column_to_rownames("marker") %>% as.matrix()
-p_mat <- p_df %>% column_to_rownames("marker") %>% as.matrix()
+ggplot(df_plot, aes(x = fct_rev(marker_reordered), y = plot_value, color = color_flag)) +
+  geom_point(size = 3, alpha = 0.9) +
+  geom_hline(yintercept = cutoff, linetype = "dashed", color = "red", size = 0.7) +
+  scale_color_manual(values = c("above_cutoff" = "red", "below_cutoff" = "#2C7BB6"), guide = "none") +
+  labs(
+    title = "Markers ranked by average trial-level surrogacy",
+    x = "Marker",
+    y = "1 - weighted average of delta"
+  ) +
+  theme_bw(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 18, face = "bold"),
+    axis.title = element_text(size = 14),
+    axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size = 6),
+    axis.text.y = element_text(size = 12),
+    panel.grid.major = element_line(color = "grey90"),
+    panel.grid.minor = element_blank()
+  ) +
+  ylim(plot_min, 1) +
+  facet_wrap(~ timepoint, ncol = 1, scales = "free_x",
+             labeller = labeller(timepoint = function(x) paste0("Day ", x))) +
+  scale_x_reordered()
 
-## -----------------------
-## 2) Column metadata from col_id
-## -----------------------
-col_meta <- tibble(col_id = colnames(mat)) %>%
-  tidyr::separate(
-    col_id,
-    into = c("day_label", "study"),
-    sep = "_",
-    extra = "merge",
-    remove = FALSE
-  ) %>%
-  mutate(study_time_collected = suppressWarnings(as.numeric(sub("Day", "", day_label))))
+# params
+tp <- 7
 
-if (any(is.na(col_meta$study_time_collected))) {
-  warning("Some column names did not parse to a numeric day. Check that col_id = 'DayX_study' is correct.")
-}
+# Define a vector of genes which have high average trial-level 
+# Surrogacy at any timepoint
+markers_to_keep <- df_plot %>%
+  filter(plot_value > cutoff,
+         study_time_collected == tp) %>%
+  pull(marker) %>%
+  unique()
 
-## -----------------------
-## 3) Order columns by numeric day ascending then study name
-## -----------------------
-col_meta <- col_meta %>% arrange(study_time_collected, study)
-col_ord <- col_meta$col_id
-mat <- mat[, col_ord, drop = FALSE]
-p_mat <- p_mat[, col_ord, drop = FALSE]
-col_meta <- col_meta %>% arrange(study_time_collected, study)
+markers_to_keep
 
-## -----------------------
-## 4) Column names = study labels (shown under the heatmap)
-## -----------------------
-colnames(mat) <- col_meta$study
-colnames(p_mat) <- col_meta$study
+# Filter data for the chosen timepoint and markers
+rise_results_df_filtered <- rise_results_df %>%
+  filter(marker %in% markers_to_keep,
+         study_time_collected == tp) %>%
+  # ensure marker factor ordering matches markers_to_keep
+  mutate(marker = factor(marker, levels = markers_to_keep))
 
-## -----------------------
-## 5) Non-linear continuous colour mapping (map |delta| -> strength -> white/red)
-## -----------------------
-strength_to_col <- colorRamp2(c(0, 1), c("white", "red"))
+# decide number of columns for facet grid
+n_markers <- length(markers_to_keep)
+ncol_facets <- min(5, n_markers)  # adjust 5 -> any default you prefer
 
-col_fun <- function(x) {
-  na_idx <- is.na(x)
-  if (all(na_idx)) return(rep(NA_character_, length(x)))
-  s <- exp(- (abs(x) / sigma) ^ power)  # 1 at x=0, decays with |x|
-  cols <- strength_to_col(s)
-  cols[na_idx] <- NA_character_
-  cols
-}
+plot_min = min(rise_results_df_filtered$u_y,rise_results_df_filtered$u_s) - 0.01
 
-legend_breaks <- seq(-1, 1, length.out = 5)
-legend_cols <- col_fun(legend_breaks)
+# plotting
+p_facets <- ggplot(rise_results_df_filtered, aes(x = u_y, y = u_s)) +
+  geom_point(size = 2, alpha = 0.8) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 0.8) +
+  scale_x_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
+  coord_fixed(ratio = 1) +
+  labs(
+    x = "U_Y",
+    y = "U_S",
+    title = paste0("U_Y vs U_S — timepoint = ", tp)
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.title = element_text(size = 14),
+    axis.text  = element_text(size = 12),
+    plot.title = element_text(size = 16, hjust = 0.5),
+    strip.text = element_text(size = 12)   # facet label text size
+  ) +
+  facet_wrap(~ marker, ncol = ncol_facets, scales = "fixed")
 
-## -----------------------
-## 6) Significance mask for stars
-## -----------------------
-sig_mat <- (p_mat < p_limit)
-sig_mat[is.na(sig_mat)] <- FALSE
-
-## -----------------------
-## 7) column_split with labels "Day x" (slice titles will be shown above column dendrogram)
-## -----------------------
-timepoint_levels <- sort(unique(col_meta$study_time_collected))
-timepoint_levels <- timepoint_levels[!is.na(timepoint_levels)]
-column_split_factor <- factor(col_meta$study_time_collected,
-                              levels = timepoint_levels,
-                              labels = paste0("Day ", timepoint_levels))
-
-## -----------------------
-## 8) Build heatmap (show_column_split = TRUE to display Day slice titles above dendrogram)
-## -----------------------
-ht <- Heatmap(
-  mat,
-  name = "delta",
-  col = col_fun,
-  na_col = "grey90",
-  cluster_rows = F,
-  show_row_dend = FALSE,
-  cluster_columns = TRUE,
-  cluster_column_slices = FALSE,
-  show_column_dend = TRUE,
-  column_dend_side = "top",           # dendrogram above heatmap
-  column_dend_height = unit(2, "cm"),
-  column_split = column_split_factor,
-  column_gap = unit(2, "mm"),
-  column_names_side = "bottom",       # study labels under the heatmap
-  column_names_gp = gpar(fontsize = 8),
-  column_names_rot = 45,
-  heatmap_legend_param = list(
-    title = "delta",
-    at = legend_breaks,
-    labels = as.character(round(legend_breaks, 2))
-  ),
-  column_title = "Study Name",
-  column_title_side = "bottom",
-  column_title_gp = gpar(fontsize = 12, fontface = "bold"),
-  row_title = "Gene",
-  row_title_gp = gpar(fontsize = 12, fontface = "bold"),
-  cell_fun = function(j, i, x, y, width, height, fill) {
-    if (isTRUE(sig_mat[i, j])) {
-      # compute a fontsize in points proportional to the cell height (in mm -> approximate pts)
-      # convertHeight(height, "mm", valueOnly=TRUE) returns mm, 1 mm ≈ 2.83465 points
-      cell_h_mm <- grid::convertHeight(height, "mm", valueOnly = TRUE)
-      fontsize_pts <- round(pmin(10, pmax(4, cell_h_mm * 5)))    # tune multiplier if needed
-      
-      # small vertical offset (fraction of cell height) to compensate for font baseline
-      v_off <- height * 0.06  # 6% of cell height; reduce/increase if needed
-      
-      grid::grid.text(
-        "*",
-        x = x,
-        y = y - v_off,            # nudge downward slightly so it visually centers
-        gp = grid::gpar(fontsize = fontsize_pts, fontface = "bold"),
-        just = "centre"           # ensure centred justification
-      )
-    }
-  }
-)
-
-# Draw the heatmap
-draw(ht, heatmap_legend_side = "right", annotation_legend_side = "right")
+print(p_facets)
