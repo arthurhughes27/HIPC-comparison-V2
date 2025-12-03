@@ -152,9 +152,6 @@ p_rise_results_list_influenzain = fs::path(
 )
 
 # Save the results
-readRDS(p_rise_results_list_influenzain)
-
-# Save the results
 saveRDS(rise_results_list,
         file = p_rise_results_list_influenzain)
 
@@ -336,7 +333,7 @@ for (tp in timepoints_to_retain) {
       x = expression(U[Y]),
       y = expression(U[S]),
       title = paste0(
-        "Treatment effects on response vs marker across trials (Day ",
+        "Influenza (IN) : Treatment effects on response vs marker across trials (Day ",
         tp,
         ": N trials = ",
         length(unique(
@@ -409,3 +406,159 @@ for (tp in timepoints_to_retain) {
     units = "cm"
   )
 }
+
+
+# ---------------------------
+# Parameters
+# ---------------------------
+top_markers <- 20
+timepoints_to_retain <- c(1,3,7)
+highlight_threshold <- 0.25
+scale_power <- 2
+sep <- "___"
+
+# ---------------------------
+# Select top markers
+# ---------------------------
+markers_to_keep_heatmap <- df_plot %>%
+  filter(study_time_collected %in% timepoints_to_retain) %>% 
+  arrange(weighted_delta) %>%
+  slice_head(n = top_markers) %>%
+  pull(marker) %>%
+  unique()
+
+rise_results_df_filtered <- rise_results_df %>% 
+  filter(study_time_collected %in% timepoints_to_retain,
+         marker %in% markers_to_keep_heatmap)
+
+# ---------------------------
+# Pivot to wide and numeric matrix
+# ---------------------------
+df_wide <- rise_results_df_filtered %>%
+  filter(!is.na(delta)) %>%
+  mutate(col_id = paste0(study_accession, sep, study_time_collected)) %>%
+  select(marker, col_id, delta, p_adjusted) %>%
+  pivot_wider(names_from = col_id, values_from = c(delta, p_adjusted))
+
+# Extract matrices
+mat <- as.matrix(df_wide %>% select(starts_with("delta_")))
+rownames(mat) <- df_wide$marker
+
+p_mat <- as.matrix(df_wide %>% select(starts_with("p_adjusted_")))
+rownames(p_mat) <- df_wide$marker
+
+# Keep only non-empty columns
+keep_cols <- colSums(!is.na(mat)) > 0
+mat <- mat[, keep_cols, drop = FALSE]
+p_mat <- p_mat[, keep_cols, drop = FALSE]
+if (ncol(mat) == 0) stop("No columns with data remain after filtering.")
+
+# Column metadata
+col_full <- colnames(mat)
+col_study <- sub(paste0(sep, ".*$"), "", col_full)  # remove suffix after ___
+col_study <- sub("^delta_", "", col_study)           # remove delta_ prefix
+col_time_raw <- sub(paste0("^.*", sep), "", col_full)
+col_time_num <- as.integer(col_time_raw)
+col_time_factor <- factor(paste0("Day ", col_time_num),
+                          levels = paste0("Day ", timepoints_to_retain))
+
+# Reorder columns
+ord_cols <- order(match(col_time_num, timepoints_to_retain), col_study)
+mat <- mat[, ord_cols, drop = FALSE]
+p_mat <- p_mat[, ord_cols, drop = FALSE]
+col_study <- col_study[ord_cols]
+col_time_factor <- factor(paste0("Day ", col_time_num[ord_cols]), levels = paste0("Day ", timepoints_to_retain))
+colnames(mat) <- col_study
+colnames(p_mat) <- col_study
+
+# ---------------------------
+# Color mapping
+# ---------------------------
+color_transform <- function(x, threshold = highlight_threshold, power = scale_power) {
+  y <- exp(- (abs(x)/threshold)^power)
+  return(y)
+}
+col_fun <- function(x) {
+  x_trans <- color_transform(x)
+  colorRamp2(c(0,1), c("white", "#C40014"))(x_trans)
+}
+
+# ---------------------------
+# Create significance symbols
+# ---------------------------
+sig_mat <- ifelse(p_mat < 0.05, "*", "")
+
+ht_rise <- Heatmap(
+  mat,
+  name = "Delta",
+  col = col_fun,
+  na_col = "grey95",
+  cluster_rows = TRUE,
+  cluster_columns = TRUE,
+  column_split = col_time_factor,
+  cluster_column_slices = FALSE,
+  column_dend_side = "top",
+  column_dend_height = unit(3, "cm"),
+  column_gap = unit(5, "mm"),
+  show_column_names = TRUE,
+  column_names_gp = gpar(fontsize = 8),
+  show_row_names = TRUE,
+  row_names_gp = gpar(fontsize = 10),
+  row_dend_width = unit(3, "cm"),
+  row_title = "Gene",
+  show_heatmap_legend = F,
+  cell_fun = function(j, i, x, y, width, height, fill) {
+    if(sig_mat[i,j] == "*") {
+      grid.text("*", x = x, y = y, gp = gpar(col = "black", fontsize = 14))
+    }
+  }
+)
+
+draw(ht_rise)
+
+# ---------------------------
+# 2) Create the color legend manually
+# ---------------------------
+max_abs <- 1
+legend_at <- c(-max_abs, -highlight_threshold, 0, highlight_threshold, max_abs)
+legend_labels <- formatC(legend_at, digits = 2, format = "f")
+
+color_legend <- Legend(
+  col_fun = col_fun,
+  title = expression(delta[s]),
+  at = legend_at,
+  labels = legend_labels,
+  legend_height = unit(3, "cm"),
+  legend_width = unit(4, "cm"),
+  border = TRUE,
+  title_gp = gpar(fontsize = 16, fontface = "bold"),
+  labels_gp = gpar(fontsize = 12)
+)
+
+# ---------------------------
+# 3) Create the star legend
+# ---------------------------
+star_legend <- Legend(
+  labels = expression(p[adj] < 0.05),,
+  legend_gp = gpar(col = "black", fontsize = 14),
+  title = "Significance",
+  type = "points",
+  pch = "*",
+  size = unit(5, "mm")
+)
+
+# ---------------------------
+# 4) Combine legends into a single object
+# ---------------------------
+combined_legend <- packLegend(star_legend, color_legend)
+
+# ---------------------------
+# 5) Draw heatmap with combined legend
+# ---------------------------
+pdf_file <- surrogacy_figures_folder / "heatmap_surrogacy_influenzain.pdf"
+pdf(pdf_file, width = 14, height = 7)
+draw(ht_rise,
+     annotation_legend_list = list(combined_legend),  # draw combined legend
+     heatmap_legend_side = "right")
+dev.off()
+
