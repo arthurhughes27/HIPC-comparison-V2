@@ -152,6 +152,9 @@ p_rise_results_list_influenzain = fs::path(
 )
 
 # Save the results
+readRDS(p_rise_results_list_influenzain)
+
+# Save the results
 saveRDS(rise_results_list,
         file = p_rise_results_list_influenzain)
 
@@ -187,7 +190,7 @@ rise_results_df <- purrr::imap_dfr(rise_results_list, ~ {
 
 
 ### FIRST EXPLORATION OF RESULTS ###
-# Calculate a weighted average of delta values across studies for each timepoint
+# Calculate a weighted average of absolute delta values across studies for each timepoint
 # The weights will be the square root of the number of observations
 # such that larger samples provide more evidence
 
@@ -195,41 +198,53 @@ rise_results_df <- purrr::imap_dfr(rise_results_list, ~ {
 rise_summary <- rise_results_df %>%
   group_by(marker, study_time_collected) %>%
   summarise(
-    w_sum = sum(sqrt(n), na.rm = TRUE),
-    weighted_delta = if (w_sum > 0) sum(delta * sqrt(n), na.rm = TRUE) / w_sum else NA_real_,
+    w_sum = sum(n, na.rm = TRUE),
+    weighted_delta = if (w_sum > 0) sum(abs(delta) * n, na.rm = TRUE) / w_sum else NA_real_,
     n_studies = n_distinct(study_accession),
     .groups = "drop"
   )
 
 # Parameters
-timepoints_of_interest_heatmap <- c(1, 3, 7, 14)
+timepoints_to_retain <- c(1, 3, 7, 10, 14)
 n_markers <- 150
 cutoff <- 0.9  # define the cutoff
 
 # Prepare plotting data
 df_plot <- rise_summary %>%
-  filter(study_time_collected %in% timepoints_of_interest_heatmap) %>%
+  filter(study_time_collected %in% timepoints_to_retain) %>%
   mutate(plot_value = 1 - weighted_delta) %>%
   group_by(study_time_collected) %>%
   arrange(desc(plot_value)) %>%
   slice(1:n_markers) %>%
   ungroup() %>%
   mutate(
-    timepoint = factor(study_time_collected, levels = timepoints_of_interest_heatmap),
+    timepoint = factor(study_time_collected, levels = timepoints_to_retain),
     marker_reordered = reorder_within(marker, plot_value, timepoint, .desc = TRUE),
     color_flag = ifelse(plot_value > cutoff, "above_cutoff", "below_cutoff")
   )
 
+# Build labels for facets: "Day x - n studies"
+# This assumes rise_summary has a column `n_studies` giving the number of studies per timepoint.
+# If not available, replace the summarise(...) line below with an alternative (e.g. count distinct study IDs).
+labels_vec <- rise_summary %>%
+  filter(study_time_collected %in% timepoints_to_retain) %>%
+  group_by(study_time_collected) %>%
+  summarise(n_studies = first(n_studies)) %>%    # replace with an appropriate summary if needed
+  ungroup() %>%
+  mutate(label = paste0("Day ", study_time_collected, " (", n_studies, " studies)")) %>%
+  { setNames(.$label, as.character(.$study_time_collected)) }
+
 plot_min <- min(df_plot$plot_value, na.rm = TRUE) - 0.05
 
-ggplot(df_plot, aes(x = fct_rev(marker_reordered), y = plot_value, color = color_flag)) +
+p1 <- ggplot(df_plot, aes(x = fct_rev(marker_reordered), y = plot_value, color = color_flag)) +
   geom_point(size = 3, alpha = 0.9) +
   geom_hline(yintercept = cutoff, linetype = "dashed", color = "red", size = 0.7) +
   scale_color_manual(values = c("above_cutoff" = "red", "below_cutoff" = "#2C7BB6"), guide = "none") +
   labs(
-    title = "Markers ranked by average trial-level surrogacy",
+    title = "Markers ranked by weighted average trial-level surrogacy",
     x = "Marker",
-    y = "1 - weighted average of delta"
+    ## y label with Greek Delta and subscript s:
+    y = expression(1 - "weighted average of " * delta[s])
   ) +
   theme_bw(base_size = 14) +
   theme(
@@ -240,56 +255,157 @@ ggplot(df_plot, aes(x = fct_rev(marker_reordered), y = plot_value, color = color
     panel.grid.major = element_line(color = "grey90"),
     panel.grid.minor = element_blank()
   ) +
-  ylim(plot_min, 1) +
+  coord_cartesian(ylim = c(plot_min, 1)) +
   facet_wrap(~ timepoint, ncol = 1, scales = "free_x",
-             labeller = labeller(timepoint = function(x) paste0("Day ", x))) +
+             labeller = labeller(timepoint = labels_vec)) +
   scale_x_reordered()
 
+# Print plot
+print(p1)
+
+surrogacy_figures_folder = fs::path("output", "figures", "surrogacy")
+
+ggsave(
+  filename = "influenzain_surrogacy_weightedranks.pdf",
+  path = surrogacy_figures_folder,
+  plot = p1,
+  width = 40,
+  height = 30,
+  units = "cm"
+)
+
+# EXPLORING TRIAL-LEVEL SURROGACY WITH CROSS-TRIAL METRICS#
+
 # params
-tp <- 7
-
-# Define a vector of genes which have high average trial-level 
-# Surrogacy at any timepoint
-markers_to_keep <- df_plot %>%
-  filter(plot_value > cutoff,
-         study_time_collected == tp) %>%
-  pull(marker) %>%
-  unique()
-
-markers_to_keep
-
-# Filter data for the chosen timepoint and markers
-rise_results_df_filtered <- rise_results_df %>%
-  filter(marker %in% markers_to_keep,
-         study_time_collected == tp) %>%
-  # ensure marker factor ordering matches markers_to_keep
-  mutate(marker = factor(marker, levels = markers_to_keep))
-
-# decide number of columns for facet grid
-n_markers <- length(markers_to_keep)
-ncol_facets <- min(5, n_markers)  # adjust 5 -> any default you prefer
-
-plot_min = min(rise_results_df_filtered$u_y,rise_results_df_filtered$u_s) - 0.01
-
-# plotting
-p_facets <- ggplot(rise_results_df_filtered, aes(x = u_y, y = u_s)) +
-  geom_point(size = 2, alpha = 0.8) +
-  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 0.8) +
-  scale_x_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
-  coord_fixed(ratio = 1) +
-  labs(
-    x = "U_Y",
-    y = "U_S",
-    title = paste0("U_Y vs U_S — timepoint = ", tp)
-  ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    axis.title = element_text(size = 14),
-    axis.text  = element_text(size = 12),
-    plot.title = element_text(size = 16, hjust = 0.5),
-    strip.text = element_text(size = 12)   # facet label text size
-  ) +
-  facet_wrap(~ marker, ncol = ncol_facets, scales = "fixed")
-
-print(p_facets)
+for (tp in timepoints_to_retain) {
+  top_markers = 15
+  
+  # Define a vector of genes which have high average trial-level
+  # Surrogacy at any timepoint
+  markers_to_keep <- df_plot %>%
+    filter(study_time_collected == tp) %>%
+    arrange(weighted_delta) %>%
+    slice_head(n = top_markers) %>%
+    pull(marker) %>%
+    unique()
+  
+  markers_to_keep
+  
+  # Filter data for the chosen timepoint and markers
+  rise_results_df_filtered <- rise_results_df %>%
+    filter(marker %in% markers_to_keep, study_time_collected == tp) %>%
+    # ensure marker factor ordering matches markers_to_keep
+    mutate(marker = factor(marker, levels = markers_to_keep))
+  
+  # decide number of columns for facet grid
+  n_markers <- length(markers_to_keep)
+  ncol_facets <- min(5, n_markers)  # adjust 5 -> any default you prefer
+  
+  plot_min = min(rise_results_df_filtered$u_y,
+                 rise_results_df_filtered$u_s) - 0.1
+  # plot_min = 0.5
+  
+  # 1) Get min and max of n
+  n_min <- min(rise_results_df_filtered$n, na.rm = TRUE)
+  n_max <- max(rise_results_df_filtered$n, na.rm = TRUE)
+  
+  # 2) Round min up and max down to nearest 10
+  legend_min <- ceiling(n_min / 10) * 10
+  legend_max <- floor(n_max / 10) * 10
+  
+  # 3) Split interval into 4 equally spaced points: min, value1, value2, max
+  legend_ns <- seq(legend_min, legend_max, length.out = 4)
+  
+  # 4) Round intermediate values to nearest 10
+  legend_ns[c(2, 3)] <- round(legend_ns[c(2, 3)] / 50) * 50
+  
+  p2 <- ggplot(rise_results_df_filtered, aes(x = u_y, y = u_s)) +
+    # point size mapped to n so radius ~ n (area ~ n)
+    geom_point(aes(size = n), alpha = 0.5) +
+    geom_abline(
+      slope = 1,
+      intercept = 0,
+      color = "red",
+      linetype = "dashed",
+      size = 0.8
+    ) +
+    scale_x_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(plot_min, 1.01), expand = c(0, 0)) +
+    coord_fixed(ratio = 1) +
+    labs(
+      x = expression(U[Y]),
+      y = expression(U[S]),
+      title = paste0(
+        "Treatment effects on response vs marker across trials (Day ",
+        tp,
+        ": N trials = ",
+        length(unique(
+          rise_results_df_filtered$study_accession
+        )),
+        ")"
+      ),
+      subtitle = paste0(
+        "Top ",
+        n_markers,
+        " markers by weighted average of trial-level delta"
+      ),
+      size = "Trial N"  # legend title
+    ) +
+    # size scale: adjust range to taste; breaks/labels show natural n
+    scale_size_continuous(
+      range = c(1.5, 7),
+      # min/max point sizes (tweak if needed)
+      breaks = legend_ns,
+      # positions in mapped space
+      labels = as.character(legend_ns)              # show natural-scale labels in legend
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      plot.title = element_text(
+        size = 20,
+        hjust = 0.5,
+        face = "bold"
+      ),
+      plot.subtitle = element_text(size = 14, hjust = 0.5),
+      axis.title = element_text(size = 20),
+      axis.text  = element_text(size = 12),
+      
+      # increase spacing between facets so each panel has more room
+      panel.spacing = unit(1.5, "lines"),
+      
+      # draw a border around each facet panel and ensure a white background
+      panel.border = element_rect(
+        colour = "black",
+        fill = NA,
+        size = 0.5
+      ),
+      panel.background = element_rect(fill = "white", colour = NA),
+      
+      # make facet strip noticeable
+      strip.background = element_rect(
+        fill = "grey95",
+        colour = "black",
+        size = 0.3
+      ),
+      strip.text = element_text(size = 13, face = "bold"),
+      
+      # legend styling
+      legend.key = element_rect(fill = "white", colour = NA),
+      legend.title = element_text(size = 12),
+      legend.text = element_text(size = 10)
+    ) +
+    facet_wrap( ~ marker, ncol = ncol_facets, scales = "fixed")
+  
+  print(p2)
+  
+  
+  ggsave(
+    paste0("influenzain_gene_grid_day", tp, ".pdf"),
+    path = surrogacy_figures_folder,
+    plot = p2,
+    device = cairo_pdf,
+    width = 35,
+    height = 25,
+    units = "cm"
+  )
+}
