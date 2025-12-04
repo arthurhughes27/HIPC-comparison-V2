@@ -71,8 +71,8 @@ for (tp in timepoints_of_interest) {
     names()
   # largest_study = "SDY80"
   
-  largest_study_n = hipc_merged_all_norm_filtered_tp %>% 
-    filter(study_accession == largest_study) %>% 
+  largest_study_n = hipc_merged_all_norm_filtered_tp %>%
+    filter(study_accession == largest_study) %>%
     pull(study_accession) %>%
     table() %>%
     max()
@@ -134,23 +134,25 @@ for (tp in timepoints_of_interest) {
   )[["u.y"]]
   
   # Screen all markers
-  rise_screen_result = rise.screen(yone = yone,
-                                   yzero = yzero,
-                                   sone = sone,
-                                   szero = szero,
-                                   alpha = 0.05,
-                                   power.want.s = 0.8,
-                                   # epsilon = 0.3,
-                                   p.correction = "BH",
-                                   n.cores = 1,
-                                   alternative = "two.sided",
-                                   paired = TRUE)
+  rise_screen_result = rise.screen(
+    yone = yone,
+    yzero = yzero,
+    sone = sone,
+    szero = szero,
+    alpha = 0.05,
+    power.want.s = 0.8,
+    # epsilon = 0.3,
+    p.correction = "BH",
+    n.cores = 1,
+    alternative = "two.sided",
+    paired = TRUE
+  )
   
-  rise_screen_result_df = rise_screen_result[["screening.metrics"]] %>% 
+  rise_screen_result_df = rise_screen_result[["screening.metrics"]] %>%
     arrange(abs(delta))
   
-  rise_screen_genes = rise_screen_result_df %>% 
-    slice_head(n = n_markers) %>% 
+  rise_screen_genes = rise_screen_result_df %>%
+    slice_head(n = n_markers) %>%
     pull(marker)
   
   # Pre-vaccination gene expression
@@ -161,9 +163,9 @@ for (tp in timepoints_of_interest) {
   sone_screened = sone %>%
     dplyr::select(all_of(rise_screen_genes))
   
-  weight_df = rise_screen_result_df %>% 
-    slice_head(n = n_markers) %>% 
-    mutate(weight = abs(1/delta)) %>% 
+  weight_df = rise_screen_result_df %>%
+    slice_head(n = n_markers) %>%
+    mutate(weight = abs(1 / delta)) %>%
     select(marker, weight)
   
   rise_result = rise.evaluate(
@@ -182,7 +184,10 @@ for (tp in timepoints_of_interest) {
     screening.weights = weight_df
   )
   
-  message(paste0(length(rise_result[["screening.results"]][["significant.markers"]]), " significant markers identified in signature."))
+  message(paste0(
+    length(rise_result[["screening.results"]][["significant.markers"]]),
+    " significant markers identified in signature."
+  ))
   
   rise_study_df = data.frame(as.list(rise_result[["gamma.s.evaluate"]]))
   
@@ -212,7 +217,6 @@ for (tp in timepoints_of_interest) {
     unique()
   
   for (study in remaining_studies) {
-    
     # Derive a signature based on the largest study
     hipc_merged_all_norm_filtered_tp_study = hipc_merged_all_norm_filtered_tp %>%
       filter(study_accession == study)
@@ -292,8 +296,7 @@ for (tp in timepoints_of_interest) {
 df_list <- rise_studysignatures_results_list[[as.character(timepoints_of_interest)]][[largest_study]]
 combined_df <- do.call(rbind, df_list)
 
-plot_min = min(combined_df$u_y,
-               combined_df$u_s) - 0.5
+plot_min = min(combined_df$u_y, combined_df$u_s) - 0.5
 plot_min = 0
 
 # 1) Get min and max of n
@@ -331,9 +334,7 @@ ggplot(combined_df, aes(x = u_y, y = u_s)) +
       "Influenza (IN) : Treatment effects on response vs marker across trials (Day ",
       tp,
       ": N trials = ",
-      length(unique(
-        combined_df$study_accession
-      )),
+      length(unique(combined_df$study_accession)),
       ")"
     ),
     size = "Trial N"  # legend title
@@ -348,11 +349,7 @@ ggplot(combined_df, aes(x = u_y, y = u_s)) +
   ) +
   theme_minimal(base_size = 25) +
   theme(
-    plot.title = element_text(
-      size = 30,
-      hjust = 0.5,
-      face = "bold"
-    ),
+    plot.title = element_text(size = 30, hjust = 0.5, face = "bold"),
     plot.subtitle = element_text(size = 14, hjust = 0.5),
     axis.title = element_text(size = 20)
   )
