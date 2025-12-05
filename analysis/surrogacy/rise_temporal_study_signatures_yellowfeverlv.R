@@ -1,4 +1,4 @@
-# File to find trial-level gene expression surrogates of influenza vaccination
+# File to find trial-level gene expression surrogates of Yellow Fever vaccination
 # At each timepoint, we derive a signature from the study with the largest sample size
 # We then apply the signature to each study one by one and perform trial-level meta-analysis
 
@@ -17,14 +17,14 @@ p_load_expr_all_norm <- fs::path(processed_data_folder, "hipc_merged_all_norm.rd
 hipc_merged_all_norm <- readRDS(p_load_expr_all_norm)
 
 # Timepoints of interest (numeric)
-timepoints_to_keep <- c(0, 1, 3, 7, 10, 14)
+timepoints_to_keep <- c(0, 3, 7, 14)
 
-# Filter to samples with non-missing immune response, Influenza vaccine,
+# Filter to samples with non-missing immune response, Yellow Fever vaccine,
 # and collected at one of the specified timepoints.
 hipc_merged_all_norm_filtered <- hipc_merged_all_norm %>%
   filter(
     !is.na(immResp_MFC_anyAssay_log2_MFC),
-    vaccine_name == "Influenza (IN)",
+    vaccine_name == "Yellow Fever (LV)",
     study_time_collected %in% timepoints_to_keep
   )
 
@@ -39,7 +39,7 @@ study_names = hipc_merged_all_norm_filtered %>%
   pull(study_accession) %>%
   unique()
 
-timepoints_of_interest = c(1, 3, 7, 10, 14)
+timepoints_of_interest = c(3, 7, 14)
 
 n_backup = 10
 
@@ -613,7 +613,7 @@ for (tp in timepoints_of_interest) {
     plot_layout(guides = "collect") +
     plot_annotation(
       title = paste0(
-        "Influenza (IN) - Treatment effects on response vs marker across trials (",
+        "Yellow Fever (LV) - Treatment effects on response vs marker across trials (",
         day_name,
         ")"
       ),
@@ -643,7 +643,7 @@ for (tp in timepoints_of_interest) {
     "output",
     "figures",
     "surrogacy",
-    paste0("influenzain_rise_study_grid_day", day_number, ".pdf")
+    paste0("yellowfeverlv_rise_study_grid_day", day_number, ".pdf")
   )
   
   pdf(p_figure, width = 17, height = max(5,n_plots))
