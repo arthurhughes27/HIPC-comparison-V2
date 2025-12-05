@@ -17,7 +17,7 @@ p_load_expr_all_norm <- fs::path(processed_data_folder, "hipc_merged_all_norm.rd
 hipc_merged_all_norm <- readRDS(p_load_expr_all_norm)
 
 # Timepoints of interest (numeric)
-timepoints_to_keep <- c(0, 1, 3, 7, 10, 14)
+timepoints_to_keep <- c(0, 1, 3, 7)
 
 # Filter to samples with non-missing immune response, Influenza vaccine,
 # and collected at one of the specified timepoints.
@@ -39,7 +39,7 @@ study_names = hipc_merged_all_norm_filtered %>%
   pull(study_accession) %>%
   unique()
 
-timepoints_of_interest = c(1, 7)
+timepoints_of_interest = c(1, 3, 7)
 
 n_backup = 10
 
