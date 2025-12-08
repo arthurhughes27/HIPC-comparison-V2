@@ -396,8 +396,8 @@ for (tp in timepoints_to_retain) {
 # ---------------------------
 # Parameters
 # ---------------------------
-top_markers <- 30
-timepoints_to_retain <- c(1,3,7)
+top_markers <- 20
+timepoints_to_retain <- c(7)
 highlight_threshold <- 0.2
 scale_power <- 1.8
 sep <- "___"
@@ -415,6 +415,12 @@ markers_to_keep_heatmap <- df_plot %>%
 rise_results_df_filtered <- rise_results_df %>% 
   filter(study_time_collected %in% timepoints_to_retain,
          marker %in% markers_to_keep_heatmap)
+
+n_trials = rise_results_df_filtered %>% 
+  select(study_time_collected, 
+         study_accession) %>% 
+  distinct() %>% 
+  nrow()
 
 # ---------------------------
 # Pivot to wide and numeric matrix
@@ -565,11 +571,24 @@ combined_legend <- packLegend(star_legend, color_legend)
 # ---------------------------
 # 5) Draw heatmap with combined legend and a separate main title row
 # ---------------------------
+if (length(timepoints_to_retain) > 1) {
+  main_title <- paste0("Surrogacy heatmap - Influenza (IN): top ",
+                       n_markers ,
+                       " markers by wMAE across time")
+} else {
+  main_title <- paste0("Surrogacy heatmap - Influenza (IN): top ",
+                       n_markers ,
+                       " markers by wMAE at day ", 
+                       timepoints_to_retain)
+}
 
-main_title <- paste0("Surrogacy heatmap - Influenza (IN): top ",  n_markers ," markers by wMAE across time")
+pdf_file <- surrogacy_figures_folder / paste0(
+  "heatmap_surrogacy_influenzain_days",
+  paste(timepoints_to_retain, collapse = ""),
+  ".pdf"
+)
 
-pdf_file <- surrogacy_figures_folder / "heatmap_surrogacy_influenzain.pdf"
-pdf(pdf_file, width = 14, height = 10)
+pdf(pdf_file, width = n_trials, height = 0.5*top_markers)
 
 # create a 2-row layout: top row for title, bottom row for the heatmap
 grid.newpage()

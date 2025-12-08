@@ -47,6 +47,10 @@ n_backup = 10
 rise_studysignatures_results_list = vector("list", length(timepoints_of_interest))
 names(rise_studysignatures_results_list) = paste0("Day ", timepoints_of_interest)
 
+# Initialise list to store signatures with same structure
+rise_studysignatures_genelists_list = vector("list", length(timepoints_of_interest))
+names(rise_studysignatures_genelists_list) = paste0("Day ", timepoints_of_interest)
+
 for (tp in timepoints_of_interest) {
   tp_string = paste0("Day ", tp)
   
@@ -69,6 +73,9 @@ for (tp in timepoints_of_interest) {
   
   rise_studysignatures_results_list[[tp_string]] = vector("list", n_studies_tp)
   names(rise_studysignatures_results_list[[tp_string]]) = study_names_tp
+  
+  rise_studysignatures_genelists_list[[tp_string]] = vector("list", n_studies_tp)
+  names(rise_studysignatures_genelists_list[[tp_string]]) = study_names_tp
   
   message(paste0(n_studies_tp, ' studies to analyse.'))
   
@@ -185,6 +192,8 @@ for (tp in timepoints_of_interest) {
         pull(marker)
     }
     
+    rise_studysignatures_genelists_list[[tp_string]][[sdy_main]] = signature_sdy_main
+    
     # First, evaluate the signature in the current study
     
     min_delta = rise_screen_result_sdy_main_df %>%
@@ -255,7 +264,7 @@ for (tp in timepoints_of_interest) {
         nrow()
       
       message(paste0(
-        "Deriving signature from study ",
+        "Evaluating signature in study ",
         sdy_alt,
         " (N = ",
         n_sdy_alt,
@@ -365,10 +374,13 @@ for (tp in timepoints_of_interest) {
 
 # Specify path for saving list of results
 p_results = fs::path("output", "results", "surrogacy", "rise_studysignatures_results_list.rds")
+p_genelists = fs::path("output", "results", "surrogacy", "rise_studysignatures_genelists_list.rds")
 
 # Save results
 saveRDS(rise_studysignatures_results_list, file = p_results)
+saveRDS(rise_studysignatures_genelists_list, file = p_genelists)
 rise_studysignatures_results_list = readRDS(p_results)
+rise_studysignatures_genelists_list = readRDS(p_genelists)
 
 # Compute an evaluation metric (weighted absolute delta across evaluation studies)
 
@@ -652,4 +664,56 @@ for (tp in timepoints_of_interest) {
   
 }
 
+# Interpretation - function which copies signature from a given day and study onto the clipboard to put in david
+copy_signature_strings <- function(day_number, study_name, results_list) {
+  # Build day key ("Day X")
+  day_key <- paste0("Day ", day_number)
+  
+  # Extract vector
+  vec <- purrr::pluck(results_list, day_key, study_name, .default = NULL)
+  
+  if (is.null(vec)) {
+    stop("No entry found for: ", day_key, " → ", study_name)
+  }
+  if (!is.character(vec)) {
+    stop("The retrieved element is not a character vector.")
+  }
+  
+  # Concatenate
+  out <- paste(vec, collapse = ", ")
+  
+  # ---------------------------
+  # Save to txt file
+  # ---------------------------
+  dir_path <- fs::path("output", "results", "surrogacy")
+  fs::dir_create(dir_path)
+  
+  file_path <- fs::path(
+    dir_path,
+    paste0(study_name, "_day", day_number, "_signature.txt")
+  )
+  
+  writeLines(out, file_path)
+  
+  message("Signature saved to:\n", file_path)
+  
+  # ---------------------------
+  # Optional clipboard copy (no errors)
+  # ---------------------------
+  if (requireNamespace("clipr", quietly = TRUE) && clipr::clipr_available()) {
+    clipr::write_clip(out)
+    message("Copied to clipboard.")
+  } else {
+    message("(Clipboard unavailable — skipped.)")
+  }
+  
+  # Always print to console
+  message("\n--- SIGNATURE ---\n", out, "\n------------------")
+  
+  return(out)
+}
 
+
+copy_signature_strings(day_number = 7,
+                       study_name = "SDY61",
+                       results_list = rise_studysignatures_genelists_list)
