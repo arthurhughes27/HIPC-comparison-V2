@@ -9,6 +9,7 @@ library(ggh4x)
 library(stringr)
 library(scales)
 library(patchwork)
+library(tibble)
 
 p_dearseq_dgsa_results_processed = fs::path("output",
                                             "results",
@@ -410,7 +411,8 @@ p1 = plot_sensitivity_heatmap(
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
   timepoint    = 1,
-  p_approach   = c("global", "withinTime", "withinComparison"),
+  #p_approach   = c("global", "withinTime", "withinComparison"),
+  p_approach   = c("withinTime"),
   p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1.5, 0.5),
@@ -423,7 +425,8 @@ p2 = plot_sensitivity_heatmap(
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
   timepoint    = 3,
-  p_approach   = c("global", "withinTime", "withinComparison"),
+  # p_approach   = c("global", "withinTime", "withinComparison"),
+  p_approach   = c("withinTime"),
   p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1.5, 0.5),
@@ -436,7 +439,8 @@ p3 = plot_sensitivity_heatmap(
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
   timepoint    = 7,
-  p_approach   = c("global", "withinTime", "withinComparison"),
+  # p_approach   = c("global", "withinTime", "withinComparison"),
+  p_approach   = c("withinTime"),
   p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1.5, 0.5),
@@ -550,7 +554,7 @@ p3 <- p3 +
 combined <- (p1 / p2 / p3) +
   plot_layout(ncol = 1, heights = c(7/12, 11/12, 1), guides = "collect") +
   plot_annotation(
-    title = "Sensitivity Heatmaps Across Time",
+    title = "Specification Heatmaps Across Time",
     theme = theme(
       plot.title = element_text(
         face = "bold",
@@ -565,7 +569,7 @@ combined <- (p1 / p2 / p3) +
   )
 
 # Display
-# print(combined)
+print(combined)
 
 
 figures_folder = fs::path("output", "figures", "dgsa")
@@ -614,3 +618,4 @@ ggsave(
   height = 12,
   dpi = 300
 )
+
