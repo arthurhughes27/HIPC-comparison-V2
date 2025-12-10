@@ -251,12 +251,7 @@ forest_mid <- ggplot(plot_df, aes(x = delta.estimate, y = y)) +
     plot.margin = unit(c(1.2, 0.6, 1, 1.0), "lines")
   ) +
   geom_vline(xintercept = c(-epsilon, epsilon), linetype = "dashed", color = "red", size = 0.6) +
-  geom_vline(xintercept = 0, linetype = "solid", color = "grey80") +
-  # epsilon labels below the plot area
-  annotate("text", x =  epsilon, y = -0.8, label = paste0("+", signif(epsilon, 3)),
-           vjust = 1, size = 4.2, fontface = "bold", color = "red") +
-  annotate("text", x = -epsilon, y = -0.8, label = paste0("-", signif(epsilon, 3)),
-           vjust = 1, size = 4.2, fontface = "bold", color = "red")
+  geom_vline(xintercept = 0, linetype = "solid", color = "grey80") 
 
 # ----------------- Right panel: p-value / weight / N ------------------------
 # use dummy x positions 1,2,3 for the three columns; align y with middle and left
