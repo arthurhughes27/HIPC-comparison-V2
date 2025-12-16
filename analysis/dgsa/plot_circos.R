@@ -793,11 +793,11 @@ plot_circos = function(method_name,
 }
 
 # Function to draw the legend
-# Function to draw circos legend separately
 draw_circos_legend <- function(aggregates_name,
                                ring = c("all", "expression", "none"),
                                placeholder = FALSE,
-                               scale = 1) {
+                               scale = 1,
+                               font_scale = 1) {
   ring <- match.arg(ring)
   
   # Extract colours automatically, just like in plot_circos
@@ -828,8 +828,8 @@ draw_circos_legend <- function(aggregates_name,
                         NA,
                         "purple",
                         "orange")
-    legend_cex <- c(1.5, rep(1.2, length(aggregates_name)), 1.5, 1.2, 1.2, 1.5, 1.2, 1.2) * scale
-    legend_yintersp <- c(1, rep(0.8, length(aggregates_name)), 1.5, 0.8, 0.8, 1.5, 0.8, 0.8) * scale
+    legend_cex_base <- c(1.5, rep(1.2, length(aggregates_name)), 1.5, 1.2, 1.2, 1.5, 1.2, 1.2)
+    legend_yintersp_base <- c(1, rep(0.8, length(aggregates_name)), 1.5, 0.8, 0.8, 1.5, 0.8, 0.8)
   } else if (ring == "expression") {
     legend_labels <- c(
       expression(bold("Gene Set Aggregate")),
@@ -839,16 +839,23 @@ draw_circos_legend <- function(aggregates_name,
       "Downregulated"
     )
     legend_colours <- c(NA, aggregate_colors[aggregates_name], NA, "red", "blue")
-    legend_cex <- c(1.5, rep(1.2, length(aggregates_name)), 1.5, 1.2, 1.2) * scale
-    legend_yintersp <- c(1, rep(0.8, length(aggregates_name)), 1.5, 0.8, 0.8) * scale
+    legend_cex_base <- c(1.5, rep(1.2, length(aggregates_name)), 1.5, 1.2, 1.2)
+    legend_yintersp_base <- c(1, rep(0.8, length(aggregates_name)), 1.5, 0.8, 0.8)
   } else if (ring == "none") {
     legend_labels <- c(expression(bold("Gene Set Aggregate")), aggregates_name)
     legend_colours <- c(NA, aggregate_colors[aggregates_name])
-    legend_cex <- c(1.5, rep(1.2, length(aggregates_name))) * scale
-    legend_yintersp <- c(1, rep(0.8, length(aggregates_name))) * scale
+    legend_cex_base <- c(1.5, rep(1.2, length(aggregates_name)))
+    legend_yintersp_base <- c(1, rep(0.8, length(aggregates_name)))
   }
   
+  # Apply global scale and font_scale
+  legend_cex <- legend_cex_base * scale * font_scale
+  legend_yintersp <- legend_yintersp_base * scale * font_scale
+  
   max_cex <- max(legend_cex)
+  
+  # Compute text.width using the (possibly scaled) max cex so spacing is preserved
+  text_width_val <- 1.2 * max(strwidth(legend_labels, cex = max_cex))
   
   if (!placeholder) {
     legend(
@@ -858,9 +865,9 @@ draw_circos_legend <- function(aggregates_name,
       border = "white",
       cex = legend_cex,
       y.intersp = legend_yintersp,
-      text.width = 1.2 * max(strwidth(legend_labels, cex = max_cex)) * scale,
+      text.width = text_width_val,
       ncol = 1,
-      bty = "o",
+      bty = "n",  # <-- no box
       xjust = 0,
       text.col = rep("black", length(legend_labels)),
       title = NULL
@@ -875,7 +882,7 @@ draw_circos_legend <- function(aggregates_name,
       border = rep(NA, length(blank_labels)),
       cex = legend_cex,
       y.intersp = legend_yintersp,
-      text.width = 1.2 * max(strwidth(legend_labels, cex = max_cex)) * scale,
+      text.width = text_width_val,
       ncol = 1,
       bty = "n",
       xjust = 0,
@@ -915,7 +922,7 @@ figures_folder = fs::path("output", "figures", "dgsa")
 
 pdf(
   fs::path(figures_folder, "circos_comparison.pdf"),
-  width = 24,
+  width = 27,
   height = 25
 )
 
@@ -923,7 +930,7 @@ pdf(
 layout(
   matrix(1:12, nrow = 3, byrow = TRUE),
   # 3 rows × 4 columns
-  widths  = c(0.1, 0.35, 0.35, 0.25),
+  widths  = c(0.1, 0.35, 0.35, 0.35),
   # column widths
   heights = c(0.33, 0.33, 0.33)
 )         # row heights
@@ -1037,7 +1044,8 @@ draw_circos_legend(
   ),
   ring = "expression",
   placeholder = TRUE,
-  scale = 1.3
+  scale = 1.3,
+  font_scale = 1.5
 )
 # END DAY 1 #
 
@@ -1149,11 +1157,12 @@ draw_circos_legend(
   ),
   ring = "expression",
   placeholder = FALSE,
-  scale = 1.3
+  scale = 1.5,
+  font_scale = 1.1
 )
 # END DAY 3 #
 
-# DAY 1 #
+# DAY 7 #
 plot_row_annotation("Day 7", size = 6, placeholder = FALSE)
 
 circos.clear()# make sure canvas is clean

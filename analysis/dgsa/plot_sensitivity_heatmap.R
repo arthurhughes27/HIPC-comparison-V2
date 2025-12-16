@@ -25,19 +25,36 @@ results_qusage = readRDS(p_qusage_dgsa_results_processed)
 
 results_df = bind_rows(results_dearseq, results_qusage)
 
+# results_df$condition_short <- recode(
+#   results_df$condition,
+#   "Ebola (RVV)"           = "Ebola (RVV)",
+#   "Yellow Fever (LV)"     = "Y.F. (LV)",
+#   "Smallpox (LV)"         = "Smallpox (LV)",
+#   "Tuberculosis (RVV)"    = "T.B. (RVV)",
+#   "Hepatitis A/B (IN/RP)" = "Hep. (IN/RP)",
+#   "Meningococcus (CJ)"    = "Men. (CJ)",
+#   "Meningococcus (PS)"    = "Men. (PS)",
+#   "Malaria (RP)"          = "Malaria (RP)",
+#   "Influenza (IN)"        = "Inf. (IN)",
+#   "Influenza (LV)"        = "Inf. (LV)",
+#   "Pneumococcus (PS)"     = "Pneumo. (PS)",
+#   "Varicella Zoster (LV)" = "Varicella (LV)",
+#   "HIV (RVV)"             = "HIV (RVV)"
+# )
+
 results_df$condition_short <- recode(
   results_df$condition,
   "Ebola (RVV)"           = "Ebola (RVV)",
-  "Yellow Fever (LV)"     = "Y.F. (LV)",
+  "Yellow Fever (LV)"     = "Yellow Fever (LV)",
   "Smallpox (LV)"         = "Smallpox (LV)",
-  "Tuberculosis (RVV)"    = "T.B. (RVV)",
-  "Hepatitis A/B (IN/RP)" = "Hep. (IN/RP)",
-  "Meningococcus (CJ)"    = "Men. (CJ)",
-  "Meningococcus (PS)"    = "Men. (PS)",
+  "Tuberculosis (RVV)"    = "Tuberculosis (RVV)",
+  "Hepatitis A/B (IN/RP)" = "Hepatitis (IN/RP)",
+  "Meningococcus (CJ)"    = "Meningococcus (CJ)",
+  "Meningococcus (PS)"    = "Meningococcus (PS)",
   "Malaria (RP)"          = "Malaria (RP)",
-  "Influenza (IN)"        = "Inf. (IN)",
-  "Influenza (LV)"        = "Inf. (LV)",
-  "Pneumococcus (PS)"     = "Pneumo. (PS)",
+  "Influenza (IN)"        = "Influenza (IN)",
+  "Influenza (LV)"        = "Influenza (LV)",
+  "Pneumococcus (PS)"     = "Pneumococcus (PS)",
   "Varicella Zoster (LV)" = "Varicella (LV)",
   "HIV (RVV)"             = "HIV (RVV)"
 )
@@ -413,9 +430,9 @@ p1 = plot_sensitivity_heatmap(
   timepoint    = 1,
   #p_approach   = c("global", "withinTime", "withinComparison"),
   p_approach   = c("withinTime"),
-  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
+  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel", "hochberg"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
-  fc_threshold = seq(0, 1.5, 0.5),
+  fc_threshold = seq(0, 1, 0.5),
   order = "available",
   legend_scale_exponent = 0.5
 )
@@ -427,9 +444,9 @@ p2 = plot_sensitivity_heatmap(
   timepoint    = 3,
   # p_approach   = c("global", "withinTime", "withinComparison"),
   p_approach   = c("withinTime"),
-  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
+  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel", "hochberg"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
-  fc_threshold = seq(0, 1.5, 0.5),
+  fc_threshold = seq(0, 1, 0.5),
   order = "available",
   legend_scale_exponent = 0.5
 )
@@ -441,9 +458,9 @@ p3 = plot_sensitivity_heatmap(
   timepoint    = 7,
   # p_approach   = c("global", "withinTime", "withinComparison"),
   p_approach   = c("withinTime"),
-  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel"),
+  p_correction = c("BH", "BY", "bonferroni", "holm", "hommel", "hochberg"),
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
-  fc_threshold = seq(0, 1.5, 0.5),
+  fc_threshold = seq(0, 1, 0.5),
   order = "available",
   legend_scale_exponent = 0.5
 )
@@ -456,7 +473,7 @@ p1 <- p1 +
       size = 50,
       hjust = -0.08
     ),
-    axis.title.x = element_text(face = "plain", size = 35),
+    axis.title = element_text(face = "plain", size = 50),
     plot.margin = margin(
       t = 60,
       r = 10,
@@ -490,7 +507,7 @@ p2 <- p2 +
       size = 50,
       hjust = -0.08
     ),
-    axis.title.x = element_text(face = "plain", size = 35),
+    axis.title = element_text(face = "plain", size = 50),
     plot.margin = margin(
       t = 40,
       r = 10,
@@ -524,7 +541,7 @@ p3 <- p3 +
       size = 50,
       hjust = -0.08
     ),
-    axis.title.x = element_text(face = "plain", size = 35),
+    axis.title = element_text(face = "plain", size = 50),
     plot.margin = margin(
       t = 40,
       r = 10,
@@ -552,7 +569,7 @@ p3 <- p3 +
 
 # Combine vertically with shared legend and main title
 combined <- (p1 / p2 / p3) +
-  plot_layout(ncol = 1, heights = c(7/12, 11/12, 1), guides = "collect") +
+  plot_layout(ncol = 1, heights = c(9/12, 13/12, 14/12), guides = "collect") +
   plot_annotation(
     title = "Specification Heatmaps Across Time",
     theme = theme(
@@ -581,8 +598,8 @@ ggsave(
     "sensitivity_heatmap_combined.pdf"
   ),
   combined,
-  width = 22,
-  height = 29.5,
+  width = 25,
+  height = 35,
   dpi = 300
 )
 

@@ -229,6 +229,20 @@ signature_genes = summary_df %>%
   filter(p_adjusted < 0.05) %>% 
   pull(marker)
 
+all_results_filtered = all_results %>% 
+  filter(marker == "jchain")
+
+m.gen = metagen(
+  data = all_results_filtered,
+  TE = delta,
+  seTE = sd,
+  studlab = study_accession,
+  sm = "RD",
+  common = TRUE,
+  random = TRUE,
+  method.tau = "REML",
+  method.random.ci = "HK"
+)
 
 # signature_genes = summary_df %>% 
 #   arrange(p_tost_pooled) %>% 

@@ -104,7 +104,8 @@ for (sdy in study_names) {
       alternative = "two.sided",
       paired = T,
       alpha = 0.05,
-      p.correction = "none"
+      p.correction = "none",
+      weight.mode = "diff.epsilon"
     )
     
     
