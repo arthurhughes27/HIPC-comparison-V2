@@ -1,4 +1,4 @@
-# R script to produce figures showing sensitivity heatmaps summarising DGSA analysis results sensitivity
+# R script to produce figures showing specification heatmaps summarising DGSA analysis results specification
 
 # Libraries
 library(data.table)
@@ -62,7 +62,7 @@ results_df$condition_short <- recode(
 rm(results_dearseq, results_qusage)
 
 
-plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
+plot_specification_heatmap = function(methods = c("dearseq", "qusage"),
                                     conditions = NULL,
                                     timepoint = NULL,
                                     aggregates = NULL,
@@ -72,7 +72,9 @@ plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
                                     fc_threshold = seq(0, 2, 0.1),
                                     order = c("available", "set"),
                                     legend_scale_exponent = 0.6,
-                                    short_names = TRUE) {
+                                    short_names = TRUE,
+                                    strip_text_size = 17,
+                                    condition_text_size = 13) {
   
   
   # Convert results to data.table and rename 'method' to 'analysis_method'
@@ -170,8 +172,8 @@ plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
   setkeyv(obs_counts, key_cols)
   res[obs_counts, n.DE := i.n.DE]
   
-  # finalize sensitivity_gs_results
-  sensitivity_gs_results = res[, percent.DE := fifelse(n.DE > 0, 100L * n.DE / n.comparisons, 0L)][, .(
+  # finalize specification_gs_results
+  specification_gs_results = res[, percent.DE := fifelse(n.DE > 0, 100L * n.DE / n.comparisons, 0L)][, .(
     gs.name,
     analysis_method,
     p_spec,
@@ -186,7 +188,7 @@ plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
   )]
   
   # Summarise and rank specifications
-  summary_df = sensitivity_gs_results %>%
+  summary_df = specification_gs_results %>%
     group_by(
       analysis_method,
       p_method_spec,
@@ -406,12 +408,12 @@ plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
       plot.title   = element_text(hjust = 0.5, size = 28, face = "bold"),
       axis.title   = element_text(size = 30),
       strip.text.x = element_text(
-        size = 12,
+        size = strip_text_size,
         face = "bold",
         color = "black"
       ),
       axis.text.x  = element_blank(),
-      axis.text.y = ggtext::element_markdown(size = 10),
+      axis.text.y = ggtext::element_markdown(size = condition_text_size),
     )
 
   heatmap_plot
@@ -423,7 +425,7 @@ plot_sensitivity_heatmap = function(methods = c("dearseq", "qusage"),
 # ---------------------------
 # Inputs
 # ---------------------------
-p1 = plot_sensitivity_heatmap(
+p1 = plot_specification_heatmap(
   methods      = c("dearseq", "qusage"),
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
@@ -434,10 +436,13 @@ p1 = plot_sensitivity_heatmap(
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1, 0.5),
   order = "available",
-  legend_scale_exponent = 0.5
+  legend_scale_exponent = 0.5,
+  short_names = T,
+  strip_text_size = 17,
+  condition_text_size = 18
 )
 
-p2 = plot_sensitivity_heatmap(
+p2 = plot_specification_heatmap(
   methods      = c("dearseq", "qusage"),
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
@@ -448,10 +453,13 @@ p2 = plot_sensitivity_heatmap(
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1, 0.5),
   order = "available",
-  legend_scale_exponent = 0.5
+  legend_scale_exponent = 0.5,
+  short_names = T,
+  strip_text_size = 17,
+  condition_text_size = 18
 )
 
-p3 = plot_sensitivity_heatmap(
+p3 = plot_specification_heatmap(
   methods      = c("dearseq", "qusage"),
   conditions   = levels(results_df$condition_short),
   aggregates   = levels(results_df$gs.aggregate),
@@ -462,7 +470,10 @@ p3 = plot_sensitivity_heatmap(
   p_threshold  = c(0.0001, 0.001, 0.01, 0.05, 0.1),
   fc_threshold = seq(0, 1, 0.5),
   order = "available",
-  legend_scale_exponent = 0.5
+  legend_scale_exponent = 0.5,
+  short_names = T,
+  strip_text_size = 17,
+  condition_text_size = 18
 )
 
 p1 <- p1 +
@@ -500,7 +511,7 @@ p1 <- p1 +
   )
 
 p2 <- p2 +
-  labs(title = "b) Day 3") +
+  labs(title = "Day 3") +
   theme(
     plot.title = element_text(
       face = "bold",
@@ -534,7 +545,7 @@ p2 <- p2 +
   )
 
 p3 <- p3 +
-  labs(title = "c) Day 7") +
+  labs(title = "b) Day 7") +
   theme(
     plot.title = element_text(
       face = "bold",
@@ -568,8 +579,8 @@ p3 <- p3 +
   )
 
 # Combine vertically with shared legend and main title
-combined <- (p1 / p2 / p3) +
-  plot_layout(ncol = 1, heights = c(9/12, 13/12, 14/12), guides = "collect") +
+combined <- (p1 / p3) +
+  plot_layout(ncol = 1, heights = c(9/12, 14/12), guides = "collect") +
   plot_annotation(
     title = "Specification Heatmaps Across Time",
     theme = theme(
@@ -595,18 +606,18 @@ figures_folder = fs::path("output", "figures", "dgsa")
 ggsave(
   fs::path(
     figures_folder,
-    "sensitivity_heatmap_combined.pdf"
+    "specification_heatmap_combined.pdf"
   ),
   combined,
-  width = 25,
-  height = 35,
+  width = 30,
+  height = 33,
   dpi = 300
 )
 
 ggsave(
   fs::path(
     figures_folder,
-    "sensitivity_heatmap_day1.pdf"
+    "specification_heatmap_day1.pdf"
   ),
   p1,
   width = 22,
@@ -617,18 +628,18 @@ ggsave(
 ggsave(
   fs::path(
     figures_folder,
-    "sensitivity_heatmap_day3.pdf"
+    "specification_heatmap_day3.pdf"
   ),
   p2,
-  width = 22,
-  height = 12,
+  width = 33,
+  height = 17,
   dpi = 300
 )
 
 ggsave(
   fs::path(
     figures_folder,
-    "sensitivity_heatmap_day7.pdf"
+    "specification_heatmap_day7.pdf"
   ),
   p3,
   width = 22,

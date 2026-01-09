@@ -1667,3 +1667,757 @@ draw_circos_legend(
 # END DAY 7  #
 
 dev.off()
+
+
+
+# Now negative regulation only
+
+figures_folder = fs::path("output", "figures", "dgsa")
+
+pdf(
+  fs::path(figures_folder, "circos_comparison_negative.pdf"),
+  width = 27,
+  height = 25
+)
+
+# Define layout: 3 columns: left plot, right plot, legend
+layout(
+  matrix(1:12, nrow = 3, byrow = TRUE),
+  # 3 rows × 4 columns
+  widths  = c(0.1, 0.35, 0.35, 0.35),
+  # column widths
+  heights = c(0.33, 0.33, 0.33)
+)         # row heights
+par(mar = rep(0, 4))  # no margins
+
+# DAY 1 #
+plot_row_annotation("Day 1", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 1,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "QuSAGE",
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 1,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "dearseq",
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = TRUE,
+  scale = 1.3,
+  font_scale = 1.5
+)
+# END DAY 1 #
+
+# DAY 3 #
+plot_row_annotation("Day 3", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 3,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = NULL,
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 3,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = NULL,
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = FALSE,
+  scale = 1.5,
+  font_scale = 1.1
+)
+# END DAY 3 #
+
+# DAY 7 #
+plot_row_annotation("Day 7", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 7,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = NULL,
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 7,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = NULL,
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = TRUE,
+  scale = 1.3
+)
+# END DAY 7 #
+
+dev.off()
+
+# Generate comparison circos at each day
+
+
+
+figures_folder = fs::path("output", "figures", "dgsa")
+
+pdf(
+  fs::path(figures_folder, "circos_day1_negative.pdf"),
+  width = 24,
+  height = 9.5
+)
+
+# Define layout: 3 columns: left plot, right plot, legend
+layout(
+  matrix(1:4, nrow = 1, byrow = TRUE),
+  # 3 rows × 4 columns
+  widths  = c(0.1, 0.35, 0.35, 0.25),
+)         # row heights
+par(mar = rep(0, 4))  # no margins
+
+plot_row_annotation("Day 1", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 1,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "QuSAGE",
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 1,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "dearseq",
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = F,
+  scale = 1.3
+)
+# END DAY 1 #
+
+dev.off()
+
+
+pdf(
+  fs::path(figures_folder, "circos_day3_negative.pdf"),
+  width = 24,
+  height = 9.5
+)
+
+# Define layout: 3 columns: left plot, right plot, legend
+layout(
+  matrix(1:4, nrow = 1, byrow = TRUE),
+  # 3 rows × 4 columns
+  widths  = c(0.1, 0.35, 0.35, 0.25),
+)         # row heights
+par(mar = rep(0, 4))  # no margins
+
+plot_row_annotation("Day 3  ", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 3,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "QuSAGE",
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 3,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "dearseq",
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = F,
+  scale = 1.3
+)
+# END DAY 3   #
+
+dev.off()
+
+
+
+
+
+pdf(
+  fs::path(figures_folder, "circos_day7_negative.pdf"),
+  width = 24,
+  height = 9.5
+)
+
+# Define layout: 3 columns: left plot, right plot, legend
+layout(
+  matrix(1:4, nrow = 1, byrow = TRUE),
+  # 3 rows × 4 columns
+  widths  = c(0.1, 0.35, 0.35, 0.25),
+)         # row heights
+par(mar = rep(0, 4))  # no margins
+
+plot_row_annotation("Day 7 ", size = 6, placeholder = FALSE)
+
+circos.clear()# make sure canvas is clean
+
+plot_circos(
+  method_name = "qusage",
+  conditions = levels(results_df$condition),
+  timepoint = 7,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "QuSAGE",
+  title_size = 6,
+  title_line = -4
+)
+
+circos.clear()
+plot_circos(
+  method_name = "dearseq",
+  conditions = levels(results_df$condition),
+  timepoint = 7,
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  p_correction = "BH",
+  p_approach = "global",
+  p_threshold = 0.05,
+  filter_variable = "none",
+  filter_mode = "user",
+  user_threshold = 0.5,
+  quantile_threshold = 0.5,
+  scores = "fc.score",
+  correlation = "corr.mean",
+  arc = "negative",
+  ring = "expression",
+  order = "set_all",
+  quantile_scoreclip = 0.995,
+  legend = FALSE,
+  plot_title = "dearseq",
+  title_size = 6,
+  title_line = -4
+)
+
+plot.new()
+plot.window(xlim = c(0, 1), ylim = c(0, 1)) # empty plot
+draw_circos_legend(
+  aggregates_name = c(
+    "Antigen Presentation",
+    "Inflammatory/TLR/Chemokines",
+    "Interferon/Antiviral Sensing",
+    "Monocytes",
+    "DC Activation",
+    "Neutrophils",
+    "NK Cells",
+    "Signal Transduction",
+    "ECM And Migration",
+    "Energy Metabolism",
+    "Cell Cycle",
+    "Platelets",
+    "T Cells",
+    "B Cells",
+    "Plasma Cells"
+  ),
+  ring = "expression",
+  placeholder = F,
+  scale = 1.3
+)
+# END DAY 7  #
+
+dev.off()
